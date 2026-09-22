@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="smvmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0038ff"/>
+      <stop offset="50%" stop-color="#0026e6"/>
+      <stop offset="100%" stop-color="#0018b8"/>
+    </linearGradient>
+    <filter id="subtleGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0026e6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#subtleGlow)">
+    <!-- Main S curved loop and flow -->
+    <path d="M 280 180 
+             C 275 110, 240 45, 175 45 
+             C 115 45, 90 95, 95 160 
+             C 100 230, 160 270, 200 275 
+             C 230 280, 280 290, 275 350 
+             C 270 395, 230 405, 190 395 
+             C 150 385, 140 340, 145 320 
+             C 150 295, 175 285, 195 285
+             C 175 280, 120 260, 105 210
+             C 140 215, 180 218, 220 215
+             C 240 215, 260 205, 260 170
+             C 260 120, 230 80, 180 80
+             C 135 80, 125 115, 125 155
+             C 125 190, 145 220, 190 235
+             C 215 242, 235 255, 240 280
+             C 250 330, 225 365, 185 365
+             C 150 365, 135 340, 135 320" 
+          fill="none" stroke="url(#smvmGrad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Horizontal planetary oval ring cutting through the center -->
+    <ellipse cx="280" cy="235" rx="240" ry="50" 
+             fill="none" stroke="url(#smvmGrad)" stroke-width="26"/>
+
+    <!-- 'M' arches on the right upper quadrant -->
+    <path d="M 310 235 
+             L 310 135 
+             C 310 115, 335 110, 355 125 
+             C 375 140, 385 180, 385 235 
+             M 385 145 
+             C 385 115, 410 110, 430 125 
+             C 450 140, 460 180, 460 235" 
+          fill="none" stroke="url(#smvmGrad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Second 'M' arch extension -->
+    <path d="M 450 235 
+             L 450 145 
+             C 455 125, 480 120, 500 135 
+             C 525 150, 535 185, 535 235" 
+          fill="none" stroke="url(#smvmGrad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Central sharp 'V' below horizontal loop -->
+    <path d="M 370 295 
+             L 405 385 
+             L 440 295" 
+          fill="none" stroke="url(#smvmGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Subtle glossy reflection overlays -->
+    <path d="M 175 58 C 130 58, 110 95, 110 145" 
+          fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 325 125 C 335 118, 350 118, 360 125" 
+          fill="none" stroke="#60a5fa" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 400 125 C 410 118, 425 118, 435 125" 
+          fill="none" stroke="#60a5fa" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  </g>
+</svg>

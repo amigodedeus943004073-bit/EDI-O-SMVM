@@ -1,0 +1,81 @@
+import { BackgroundOption } from '../types';
+
+export const BACKGROUND_OPTIONS: BackgroundOption[] = [
+  {
+    id: 'original',
+    name: 'Fundo Original',
+    type: 'original',
+    value: '',
+    thumbnail: 'linear-gradient(135deg, #262626 0%, #171717 100%)',
+  },
+  {
+    id: 'transparent',
+    name: 'Transparente (PNG)',
+    type: 'transparent',
+    value: 'transparent',
+    thumbnail: 'repeating-conic-gradient(#525252 0% 25%, #262626 0% 50%) 50% / 12px 12px',
+  },
+  {
+    id: 'solid_white',
+    name: 'Branco Estúdio',
+    type: 'solid',
+    value: '#ffffff',
+    thumbnail: '#ffffff',
+  },
+  {
+    id: 'solid_black',
+    name: 'Preto Infinito',
+    type: 'solid',
+    value: '#09090b',
+    thumbnail: '#09090b',
+  },
+  {
+    id: 'solid_slate',
+    name: 'Cinza Neutro Pro',
+    type: 'solid',
+    value: '#334155',
+    thumbnail: '#334155',
+  },
+  {
+    id: 'gradient_cyberpunk',
+    name: 'Gradiente Neon Ciber',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #0f172a 0%, #312e81 50%, #701a75 100%)',
+    thumbnail: 'linear-gradient(135deg, #0f172a 0%, #312e81 50%, #701a75 100%)',
+  },
+  {
+    id: 'gradient_sunset',
+    name: 'Pôr do Sol Dourado',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 50%, #f43f5e 100%)',
+    thumbnail: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 50%, #f43f5e 100%)',
+  },
+  {
+    id: 'gradient_emerald',
+    name: 'Esmeralda Minimalista',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%)',
+    thumbnail: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%)',
+  },
+  {
+    id: 'scene_office',
+    name: 'Escritório Moderno',
+    type: 'scene',
+    value: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=160&q=80',
+  },
+  {
+    id: 'scene_minimalist',
+    name: 'Galeria de Arte Clean',
+    type: 'scene',
+    value: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80',
+  },
+  {
+    id: 'scene_nature',
+    name: 'Natureza Suave / Bokeh',
+    type: 'scene',
+    value: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=1200&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=160&q=80',
+  },
+];

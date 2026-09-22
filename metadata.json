@@ -1,0 +1,6 @@
+{
+  "name": "SMVM IA - Edição de Foto com Inteligência Artificial",
+  "description": "Plataforma profissional de edição de fotos e retoque facial com Inteligência Artificial, remoção de fundo e filtros neurais 100% gratuitos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
