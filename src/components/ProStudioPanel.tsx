@@ -68,6 +68,10 @@ export const ProStudioPanel: React.FC<ProStudioPanelProps> = ({
           <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700/60 font-mono">
             DNG / TIFF
           </span>
+          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold flex items-center gap-1">
+            <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+            4K UHD 3840×2160
+          </span>
         </div>
       </div>
 
@@ -79,6 +83,36 @@ export const ProStudioPanel: React.FC<ProStudioPanelProps> = ({
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
+          {/* 4K UHD Master Button */}
+          <button
+            type="button"
+            onClick={() => onApplyBatch({
+              ultra4kEnabled: true,
+              ultra4kSharpness: 75,
+              ultra4kDenoise: 22,
+              sharpness: 52,
+              clarity: 40,
+              dehaze: 20,
+              whites: 12,
+              shadows: 10,
+              contrast: 16,
+            })}
+            className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/40 hover:border-amber-400 hover:bg-amber-950/30 text-left transition-all group col-span-2 shadow-sm shadow-amber-500/10"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-amber-300 group-hover:text-amber-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                Conversão 4K Ultra-HD Máster
+              </span>
+              <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
+                3840×2160 UHD
+              </span>
+            </div>
+            <p className="text-[10px] text-neutral-400">
+              Super-resolução e reconstrução de textura ótica de altíssima fidelidade.
+            </p>
+          </button>
+
           <button
             type="button"
             onClick={() => onApplyBatch({

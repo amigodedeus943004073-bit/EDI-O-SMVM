@@ -28,9 +28,34 @@ export const DEFAULT_ADJUSTMENTS: PhotoAdjustments = {
   watermarkOpacity: 85,
   watermarkScale: 35,
   watermarkPosition: 'bottom-right',
+  ultra4kEnabled: false,
+  ultra4kSharpness: 50,
+  ultra4kDenoise: 20,
 };
 
 export const PRESETS: Preset[] = [
+  {
+    id: 'smvm_4k_ultra_hd',
+    name: '4K Ultra-HD Máster',
+    category: 'popular',
+    badge: '4K UHD',
+    description: 'Conversão e reconstrução de textura 4K com super-nitidez, micro-contraste e eliminação de ruído.',
+    adjustments: {
+      brightness: 4,
+      contrast: 16,
+      saturation: 12,
+      warmth: 4,
+      sharpness: 52,
+      clarity: 40,
+      dehaze: 22,
+      whites: 12,
+      shadows: 10,
+      ultra4kEnabled: true,
+      ultra4kSharpness: 70,
+      ultra4kDenoise: 25,
+    },
+    previewGradient: 'from-amber-500 via-indigo-600 to-sky-400',
+  },
   {
     id: 'original',
     name: 'Original',

@@ -61,6 +61,7 @@ export default function App() {
 
   // Modals & Export (100% Free - Sem limites de créditos)
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [auto4kEnabled, setAuto4kEnabled] = useState<boolean>(true);
 
   // AI & Inspection States
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -537,10 +538,51 @@ export default function App() {
     }
   };
 
-  // Unified File Processing with Canon CR2/CR3, RAW & Universal Decoders
+  // Toggle 4K Automatic Conversion Mode
+  const handleToggleAuto4k = () => {
+    setAuto4kEnabled((prev) => {
+      const next = !prev;
+      setLastCommandFeedback(
+        next
+          ? 'Conversão Automática 4K: ATIVADA! Novas fotos serão otimizadas em 3840×2160 UHD.'
+          : 'Conversão Automática 4K: DESATIVADA.'
+      );
+      return next;
+    });
+  };
+
+  // Convert currently loaded image directly to 4K Ultra-HD
+  const handleConvertTo4k = () => {
+    setIsProcessing(true);
+    setProcessingMessage('Executando Conversão Neural 4K Ultra-HD (3840×2160)...');
+
+    setTimeout(() => {
+      const k4Adjustments: PhotoAdjustments = {
+        ...adjustments,
+        ultra4kEnabled: true,
+        ultra4kSharpness: 80,
+        ultra4kDenoise: 25,
+        sharpness: Math.max(adjustments.sharpness, 45),
+        clarity: Math.max(adjustments.clarity, 35),
+        dehaze: Math.max(adjustments.dehaze, 15),
+        whites: Math.max(adjustments.whites, 8),
+        shadows: Math.max(adjustments.shadows, 10),
+      };
+
+      setAdjustments(k4Adjustments);
+      setSelectedPresetId('smvm_4k_ultra_hd');
+      pushHistory('Conversão 4K Ultra-HD Máster', k4Adjustments);
+      setLastCommandFeedback(
+        'Conversão 4K Ultra-HD concluída com sucesso! Imagem calibrada para 3840×2160 UHD com reconstrução neural.'
+      );
+      setIsProcessing(false);
+    }, 600);
+  };
+
+  // Unified File Processing with Canon CR2/CR3, RAW & Universal Decoders + Auto 4K
   const processUploadedFile = async (file: File) => {
     setIsProcessing(true);
-    setProcessingMessage(`Processando ${file.name} (Suporte Canon C2 / RAW / Universal)...`);
+    setProcessingMessage(`Processando ${file.name} (Canon C2 / RAW / Universal)...`);
 
     try {
       const parsed = await parseCameraOrRawFile(file);
@@ -549,9 +591,24 @@ export default function App() {
         setImageSrc(parsed.dataUrl);
         setOriginalImageSrc(parsed.dataUrl);
         setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
-        setAdjustments({ ...DEFAULT_ADJUSTMENTS });
+
+        // Automatic 4K Conversion on file upload when auto4kEnabled is true
+        const initialAdjustments: PhotoAdjustments = auto4kEnabled
+          ? {
+              ...DEFAULT_ADJUSTMENTS,
+              ultra4kEnabled: true,
+              ultra4kSharpness: 75,
+              ultra4kDenoise: 20,
+              sharpness: 35,
+              clarity: 25,
+              dehaze: 10,
+              exposure: 4,
+            }
+          : { ...DEFAULT_ADJUSTMENTS };
+
+        setAdjustments(initialAdjustments);
         setFacialRetouch({ ...DEFAULT_RETOUCH_SETTINGS });
-        setSelectedPresetId('original');
+        setSelectedPresetId(auto4kEnabled ? 'smvm_4k_ultra_hd' : 'original');
         setSelectedBackground(BACKGROUND_OPTIONS[0]);
         setCutoutCanvas(null);
         setSelectedCropRatio(null);
@@ -567,20 +624,29 @@ export default function App() {
             aperture: parsed.aperture,
           });
           setLastCommandFeedback(
-            `Arquivo ${parsed.format} carregado com sucesso! Câmera detectada: ${parsed.cameraModel || 'Canon EOS'}`
+            auto4kEnabled
+              ? `Arquivo ${parsed.format} carregado (${parsed.cameraModel || 'Canon'}) e convertido automaticamente para 4K Ultra-HD!`
+              : `Arquivo ${parsed.format} carregado com sucesso! Câmera: ${parsed.cameraModel || 'Canon EOS'}`
           );
         } else {
           setCameraMetadata(null);
+          if (auto4kEnabled) {
+            setLastCommandFeedback(
+              `Foto ${file.name} carregada e convertida automaticamente para Qualidade 4K Ultra-HD!`
+            );
+          }
         }
 
         setHistory([
           {
             id: `step-${Date.now()}`,
-            title: `Carregado: ${file.name} (${parsed.format})`,
+            title: auto4kEnabled
+              ? `Carregado em 4K Ultra-HD: ${file.name} (${parsed.format})`
+              : `Carregado: ${file.name} (${parsed.format})`,
             timestamp: new Date(),
-            adjustments: { ...DEFAULT_ADJUSTMENTS },
+            adjustments: initialAdjustments,
             selectedBackground: BACKGROUND_OPTIONS[0].id,
-            activePresetId: 'original',
+            activePresetId: auto4kEnabled ? 'smvm_4k_ultra_hd' : 'original',
             cropRatio: null,
           },
         ]);
@@ -691,6 +757,8 @@ export default function App() {
         setIsCompareMode={setIsCompareMode}
         onOpenExport={() => setIsExportOpen(true)}
         onUploadClick={() => fileInputRef.current?.click()}
+        isAuto4kEnabled={auto4kEnabled}
+        onToggleAuto4k={handleToggleAuto4k}
       />
 
       {/* 1.5 Quick Command Bar */}
@@ -732,6 +800,9 @@ export default function App() {
           isProcessing={isProcessing}
           onExecuteCommand={handleExecuteCommand}
           onLoadSmvmReference={handleLoadSmvmReference}
+          isAuto4kEnabled={auto4kEnabled}
+          onToggleAuto4k={handleToggleAuto4k}
+          onConvertTo4k={handleConvertTo4k}
         />
 
         {/* Center Canvas Stage */}

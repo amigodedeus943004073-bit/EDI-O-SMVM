@@ -69,6 +69,9 @@ interface SidebarToolsProps {
   isProcessing: boolean;
   onExecuteCommand?: (commandText: string) => void;
   onLoadSmvmReference?: () => void;
+  isAuto4kEnabled?: boolean;
+  onToggleAuto4k?: () => void;
+  onConvertTo4k?: () => void;
 }
 
 export const SidebarTools: React.FC<SidebarToolsProps> = ({
@@ -98,6 +101,9 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
   isProcessing,
   onExecuteCommand,
   onLoadSmvmReference,
+  isAuto4kEnabled = true,
+  onToggleAuto4k,
+  onConvertTo4k,
 }) => {
   const [generativePrompt, setGenerativePrompt] = useState('');
   const [commandInput, setCommandInput] = useState('');
@@ -288,6 +294,78 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
               <p className="text-xs text-neutral-400 mt-1">
                 Aprimore fotos instantaneamente com modelos de visão computacional SMVM IA.
               </p>
+            </div>
+
+            {/* 4K Ultra-HD & Automatic Conversion Card */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-950/40 via-neutral-950 to-neutral-900 border border-amber-500/40 hover:border-amber-500/60 transition-all space-y-3 shadow-lg shadow-amber-950/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <span>Qualidade 4K Ultra-HD</span>
+                      <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        3840×2160
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-neutral-300">
+                      Super-resolução e reconstrução de micro-texturas
+                    </p>
+                  </div>
+                </div>
+
+                {onToggleAuto4k && (
+                  <button
+                    type="button"
+                    onClick={onToggleAuto4k}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-md transition-all border ${
+                      isAuto4kEnabled
+                        ? 'bg-amber-500 text-neutral-950 border-amber-400 font-extrabold'
+                        : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                    }`}
+                  >
+                    AUTO: {isAuto4kEnabled ? 'ATIVO' : 'OFF'}
+                  </button>
+                )}
+              </div>
+
+              <p className="text-xs text-neutral-400">
+                Aumenta a densidade para 8.3 Megapixels UHD, remove ruído digital e refina arestas com micro-contraste.
+              </p>
+
+              <div className="space-y-2 pt-1 border-t border-neutral-800/80">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-neutral-300">Nitidez e Frequência 4K</span>
+                  <span className="font-mono text-amber-400 font-semibold">{adjustments.ultra4kSharpness ?? 50}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={adjustments.ultra4kSharpness ?? 50}
+                  onChange={(e) =>
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      ultra4kEnabled: true,
+                      ultra4kSharpness: parseInt(e.target.value),
+                    }))
+                  }
+                  className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+              </div>
+
+              <button
+                id="btn-convert-4k-now"
+                type="button"
+                onClick={onConvertTo4k}
+                disabled={isProcessing}
+                className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 hover:from-amber-500 hover:to-amber-300 text-neutral-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-600/30 transition-all active:scale-98"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-neutral-950" />
+                <span>Converter Imagem para 4K Ultra-HD Agora</span>
+              </button>
             </div>
 
             {/* Auto Enhance Card */}

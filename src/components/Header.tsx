@@ -8,6 +8,7 @@ import {
   Download,
   Zap,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -22,6 +23,8 @@ interface HeaderProps {
   setIsCompareMode: (val: boolean | ((prev: boolean) => boolean)) => void;
   onOpenExport: () => void;
   onUploadClick: () => void;
+  isAuto4kEnabled?: boolean;
+  onToggleAuto4k?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   setIsCompareMode,
   onOpenExport,
   onUploadClick,
+  isAuto4kEnabled = true,
+  onToggleAuto4k,
 }) => {
   return (
     <header className="h-14 border-b border-neutral-800 bg-neutral-900/90 backdrop-blur-md px-4 flex items-center justify-between z-30 select-none">
@@ -130,6 +135,34 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Tools: Upload, Free Badge, Export */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* 4K Auto Conversion Mode Toggle */}
+        {onToggleAuto4k && (
+          <button
+            id="btn-header-4k-toggle"
+            onClick={onToggleAuto4k}
+            title={
+              isAuto4kEnabled
+                ? 'Conversão Automática 4K: ATIVADA (Fotos novas e edições em 3840×2160 UHD)'
+                : 'Conversão Automática 4K: DESATIVADA (Clique para ativar)'
+            }
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+              isAuto4kEnabled
+                ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/30 shadow-sm shadow-amber-500/20'
+                : 'bg-neutral-800/80 border-neutral-700/60 text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isAuto4kEnabled ? 'text-amber-400 animate-pulse' : 'text-neutral-400'}`} />
+            <span className="font-extrabold tracking-wide">4K AUTO</span>
+            <span
+              className={`text-[9px] px-1 py-0.5 rounded font-mono font-bold leading-none ${
+                isAuto4kEnabled ? 'bg-amber-400 text-neutral-950' : 'bg-neutral-700 text-neutral-300'
+              }`}
+            >
+              {isAuto4kEnabled ? 'ON' : 'OFF'}
+            </span>
+          </button>
+        )}
+
         {/* Upload Button */}
         <button
           id="btn-header-upload"

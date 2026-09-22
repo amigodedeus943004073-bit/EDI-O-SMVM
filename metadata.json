@@ -1,6 +1,6 @@
 {
   "name": "SMVM IA - Edição de Foto com Inteligência Artificial",
-  "description": "Plataforma profissional de edição de fotos e retoque facial com Inteligência Artificial, remoção de fundo e filtros neurais 100% gratuitos.",
+  "description": "Plataforma profissional de edição de fotos em 4K Ultra-HD, conversão automática, suporte a formatos Canon CR2/RAW, comandos inteligentes e retoque com IA.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -29,6 +29,13 @@ export function buildCssFilter(
     }
   }
 
+  // 4K Ultra-HD Super-Resolution Micro-Contrast Tuning
+  if (adj.ultra4kEnabled) {
+    const sharpnessBoost = ((adj.ultra4kSharpness ?? 50) / 100) * 0.08;
+    contrastFactor += 0.05 + sharpnessBoost;
+    saturationFactor += 0.02;
+  }
+
   const brightness = Math.max(0, brightnessFactor);
   const contrast = Math.max(0, contrastFactor);
   const saturation = Math.max(0, saturationFactor);
@@ -248,6 +255,148 @@ export function applyInpainting(
 }
 
 /**
+ * Calculates output dimensions considering cropping and 4K Ultra-HD / 4K DCI / 2x scale modes
+ */
+export type ExportResolutionMode = '1x' | '2x' | '4k' | '4k_dci' | 'custom';
+
+export function calculateTargetDimensions({
+  naturalWidth,
+  naturalHeight,
+  cropRatio,
+  resolutionMode = '1x',
+  customScale = 1,
+}: {
+  naturalWidth: number;
+  naturalHeight: number;
+  cropRatio?: number | null;
+  resolutionMode?: ExportResolutionMode;
+  customScale?: number;
+}): { targetW: number; targetH: number; srcX: number; srcY: number; srcW: number; srcH: number } {
+  let srcX = 0;
+  let srcY = 0;
+  let srcW = naturalWidth;
+  let srcH = naturalHeight;
+
+  if (cropRatio) {
+    const currentRatio = naturalWidth / naturalHeight;
+    if (currentRatio > cropRatio) {
+      srcW = naturalHeight * cropRatio;
+      srcX = (naturalWidth - srcW) / 2;
+    } else {
+      srcH = naturalWidth / cropRatio;
+      srcY = (naturalHeight - srcH) / 2;
+    }
+  }
+
+  let targetW = srcW;
+  let targetH = srcH;
+
+  if (resolutionMode === '2x') {
+    targetW = Math.round(srcW * 2);
+    targetH = Math.round(srcH * 2);
+  } else if (resolutionMode === '4k') {
+    // 4K Ultra-HD (Standard 3840 x 2160 UHD or 3840 on dominant edge preserving aspect ratio)
+    const isLandscape = srcW >= srcH;
+    if (isLandscape) {
+      targetW = 3840;
+      targetH = Math.round((3840 / srcW) * srcH);
+      if (targetH < 2160) {
+        targetH = 2160;
+        targetW = Math.round((2160 / srcH) * srcW);
+      }
+    } else {
+      targetH = 3840;
+      targetW = Math.round((3840 / srcH) * srcW);
+      if (targetW < 2160) {
+        targetW = 2160;
+        targetH = Math.round((2160 / srcW) * srcH);
+      }
+    }
+  } else if (resolutionMode === '4k_dci') {
+    // 4K Cinema DCI (4096 px)
+    const isLandscape = srcW >= srcH;
+    if (isLandscape) {
+      targetW = 4096;
+      targetH = Math.round((4096 / srcW) * srcH);
+    } else {
+      targetH = 4096;
+      targetW = Math.round((4096 / srcH) * srcW);
+    }
+  } else if (resolutionMode === 'custom' && customScale > 0) {
+    targetW = Math.round(srcW * customScale);
+    targetH = Math.round(srcH * customScale);
+  }
+
+  return { targetW, targetH, srcX, srcY, srcW, srcH };
+}
+
+/**
+ * High-frequency 4K detail reconstruction & Laplacian micro-contrast enhancement pass
+ */
+export function apply4kEnhancementPass(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  sharpnessFactor = 0.5
+) {
+  try {
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+    const stride = width * 4;
+    const amount = Math.max(0.12, Math.min(1.4, sharpnessFactor * 0.75));
+
+    // High frequency Laplacian edge enhancement
+    for (let y = 1; y < height - 1; y += 1) {
+      const row = y * stride;
+      for (let x = 1; x < width - 1; x += 1) {
+        const idx = row + x * 4;
+        const up = idx - stride;
+        const down = idx + stride;
+        const left = idx - 4;
+        const right = idx + 4;
+
+        // Sample center and 4-way neighbors
+        const lCenter = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
+        const lSurround = (
+          (data[up] * 0.299 + data[up + 1] * 0.587 + data[up + 2] * 0.114) +
+          (data[down] * 0.299 + data[down + 1] * 0.587 + data[down + 2] * 0.114) +
+          (data[left] * 0.299 + data[left + 1] * 0.587 + data[left + 2] * 0.114) +
+          (data[right] * 0.299 + data[right + 1] * 0.587 + data[right + 2] * 0.114)
+        ) * 0.25;
+
+        const diff = lCenter - lSurround;
+        if (Math.abs(diff) > 1.5) {
+          const delta = diff * amount;
+          data[idx] = Math.min(255, Math.max(0, data[idx] + delta));
+          data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + delta));
+          data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + delta));
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  } catch (e) {
+    console.warn('4K high-frequency pass skipped:', e);
+  }
+}
+
+/**
+ * Helper to calibrate adjustments for 4K Ultra-HD quality
+ */
+export function enhanceAndCalibrate4k(currentAdj: PhotoAdjustments): PhotoAdjustments {
+  return {
+    ...currentAdj,
+    ultra4kEnabled: true,
+    ultra4kSharpness: Math.max(currentAdj.ultra4kSharpness ?? 50, 70),
+    ultra4kDenoise: 22,
+    clarity: Math.max(currentAdj.clarity || 0, 38),
+    sharpness: Math.max(currentAdj.sharpness, 50),
+    contrast: Math.max(currentAdj.contrast, 16),
+    dehaze: Math.max(currentAdj.dehaze || 0, 18),
+    whites: Math.max(currentAdj.whites || 0, 10),
+  };
+}
+
+/**
  * Renders the final combined image at full resolution for export or preview
  */
 export async function renderExportCanvas({
@@ -258,6 +407,7 @@ export async function renderExportCanvas({
   cutoutCanvas,
   cropRatio,
   scale = 1,
+  resolutionMode = '1x',
 }: {
   imageElement: HTMLImageElement;
   adjustments: PhotoAdjustments;
@@ -266,50 +416,42 @@ export async function renderExportCanvas({
   cutoutCanvas?: HTMLCanvasElement | null;
   cropRatio?: number | null;
   scale?: number;
+  resolutionMode?: ExportResolutionMode;
 }): Promise<HTMLCanvasElement> {
-  const origW = (imageElement.naturalWidth || imageElement.width) * scale;
-  const origH = (imageElement.naturalHeight || imageElement.height) * scale;
+  const naturalW = imageElement.naturalWidth || imageElement.width;
+  const naturalH = imageElement.naturalHeight || imageElement.height;
 
-  let targetW = origW;
-  let targetH = origH;
+  // Compute exact dimensions based on selected resolutionMode (1x, 2x, 4K UHD, 4K DCI)
+  const effectiveMode = (resolutionMode === '1x' && scale > 1) 
+    ? (scale === 2 ? '2x' : (scale >= 3.5 ? '4k' : 'custom')) 
+    : resolutionMode;
 
-  // Apply crop ratio
-  let srcX = 0;
-  let srcY = 0;
-  let srcW = origW;
-  let srcH = origH;
-
-  if (cropRatio) {
-    const currentRatio = origW / origH;
-    if (currentRatio > cropRatio) {
-      // Image is wider than desired ratio -> trim horizontal sides
-      srcW = origH * cropRatio;
-      srcX = (origW - srcW) / 2;
-      targetW = srcW;
-    } else {
-      // Image is taller than desired ratio -> trim vertical sides
-      srcH = origW / cropRatio;
-      srcY = (origH - srcH) / 2;
-      targetH = srcH;
-    }
-  }
+  const { targetW, targetH, srcX, srcY, srcW, srcH } = calculateTargetDimensions({
+    naturalWidth: naturalW,
+    naturalHeight: naturalH,
+    cropRatio,
+    resolutionMode: effectiveMode,
+    customScale: scale,
+  });
 
   const exportCanvas = document.createElement('canvas');
   exportCanvas.width = Math.round(targetW);
   exportCanvas.height = Math.round(targetH);
-  const ctx = exportCanvas.getContext('2d');
+  const ctx = exportCanvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return exportCanvas;
+
+  // High-precision smooth sampling for 4K / HD
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // 1. Draw Background (if background removal is active and not original)
   if (background.id !== 'original') {
     if (background.type === 'transparent') {
-      // Clear transparent
       ctx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
     } else if (background.type === 'solid') {
       ctx.fillStyle = background.value;
       ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
     } else if (background.type === 'gradient') {
-      // Draw gradient approximation
       const grad = ctx.createLinearGradient(0, 0, exportCanvas.width, exportCanvas.height);
       if (background.id === 'gradient_cyberpunk') {
         grad.addColorStop(0, '#0f172a');
@@ -347,7 +489,7 @@ export async function renderExportCanvas({
   ctx.filter = buildCssFilter(adjustments, facialRetouch);
 
   const drawSource = (background.id !== 'original' && cutoutCanvas) ? cutoutCanvas : imageElement;
-  ctx.drawImage(drawSource, srcX / scale, srcY / scale, srcW / scale, srcH / scale, 0, 0, targetW, targetH);
+  ctx.drawImage(drawSource, srcX, srcY, srcW, srcH, 0, 0, targetW, targetH);
   ctx.restore();
 
   // 3. Warmth Tint Overlay (if warmth != 0)
@@ -475,22 +617,26 @@ export async function renderExportCanvas({
     ctx.restore();
   }
 
-  // 8. SMVM Brand Watermark Stamp (if enabled)
+  // 8. Custom Logo or SMVM Brand Watermark Stamp (if enabled)
   if (adjustments.watermarkEnabled) {
     try {
       const watermarkImg = new Image();
-      const svgDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(SMVM_LOGO_SVG)}`;
+      const logoSrc = adjustments.customWatermarkUrl || `data:image/svg+xml;utf8,${encodeURIComponent(SMVM_LOGO_SVG)}`;
       await new Promise<void>((resolve, reject) => {
         watermarkImg.onload = () => resolve();
         watermarkImg.onerror = () => reject();
-        watermarkImg.src = svgDataUrl;
+        watermarkImg.crossOrigin = 'anonymous';
+        watermarkImg.src = logoSrc;
       });
 
       ctx.save();
       ctx.globalAlpha = Math.min(1, Math.max(0.1, (adjustments.watermarkOpacity || 80) / 100));
       
       const baseLogoW = Math.max(80, (targetW * (adjustments.watermarkScale || 35)) / 100);
-      const baseLogoH = baseLogoW * (400 / 600); // 3:2 ratio
+      const aspect = (watermarkImg.naturalWidth && watermarkImg.naturalHeight)
+        ? watermarkImg.naturalHeight / watermarkImg.naturalWidth
+        : (400 / 600);
+      const baseLogoH = baseLogoW * aspect;
       const margin = Math.max(20, targetW * 0.03);
 
       let x = targetW - baseLogoW - margin;
@@ -510,8 +656,18 @@ export async function renderExportCanvas({
       ctx.drawImage(watermarkImg, x, y, baseLogoW, baseLogoH);
       ctx.restore();
     } catch (e) {
-      console.warn('Erro ao carregar marca d água SMVM:', e);
+      console.warn('Erro ao desenhar marca d água:', e);
     }
+  }
+
+  // 9. 4K Ultra-HD Detail Reconstruction & Micro-Contrast Pass
+  if (effectiveMode === '4k' || effectiveMode === '4k_dci' || adjustments.ultra4kEnabled) {
+    apply4kEnhancementPass(
+      ctx,
+      exportCanvas.width,
+      exportCanvas.height,
+      (adjustments.ultra4kSharpness ?? 50) / 100
+    );
   }
 
   return exportCanvas;

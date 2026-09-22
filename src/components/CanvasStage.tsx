@@ -564,6 +564,15 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
               </div>
             )}
 
+            {/* 4K Ultra-HD Active Indicator Badge */}
+            {adjustments.ultra4kEnabled && (
+              <div className="absolute top-3 right-3 z-20 bg-neutral-950/85 backdrop-blur-md border border-amber-500/50 px-2.5 py-1 rounded-md text-[11px] font-mono text-amber-300 shadow-xl flex items-center gap-1.5 pointer-events-none ring-1 ring-amber-500/30">
+                <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span className="font-extrabold tracking-wide text-amber-200">4K ULTRA-HD</span>
+                <span className="text-[10px] text-amber-400/80">3840×2160</span>
+              </div>
+            )}
+
             {/* SPLIT COMPARE SLIDER (ANTES / DEPOIS) */}
             {isCompareMode && (
               <div

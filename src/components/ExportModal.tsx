@@ -7,10 +7,12 @@ import {
   Sparkles,
   Layers,
   FileCheck,
+  MonitorPlay,
+  Cpu,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PhotoAdjustments, BackgroundOption, FacialRetouchSettings } from '../types';
-import { renderExportCanvas } from '../utils/imageProcessing';
+import { renderExportCanvas, calculateTargetDimensions, ExportResolutionMode } from '../utils/imageProcessing';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -37,10 +39,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [format, setFormat] = useState<'image/png' | 'image/jpeg' | 'image/webp'>('image/png');
   const [quality, setQuality] = useState<number>(95);
-  const [scale, setScale] = useState<number>(1);
+  // Default to 4K if ultra4k is enabled, otherwise 1x
+  const [resolutionMode, setResolutionMode] = useState<ExportResolutionMode>(
+    adjustments.ultra4kEnabled ? '4k' : '4k'
+  );
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
   if (!isOpen) return null;
+
+  const naturalWidth = imageElementRef.current?.naturalWidth || 1600;
+  const naturalHeight = imageElementRef.current?.naturalHeight || 1067;
+
+  // Calculate live preview dimensions for current choice
+  const { targetW: finalW, targetH: finalH } = calculateTargetDimensions({
+    naturalWidth,
+    naturalHeight,
+    cropRatio,
+    resolutionMode,
+  });
+
+  const megapixels = ((finalW * finalH) / 1000000).toFixed(1);
 
   const handleDownload = async () => {
     if (!imageElementRef.current) return;
@@ -54,7 +72,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         background: selectedBackground,
         cutoutCanvas,
         cropRatio,
-        scale,
+        resolutionMode,
       });
 
       const mimeType = format;
@@ -65,32 +83,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const cleanName = (documentName || 'smvm-ia-photo')
         .toLowerCase()
         .replace(/[^a-z0-9_-]/g, '_');
-      downloadLink.download = `${cleanName}-smvm-ia.${fileExt}`;
+      const resSuffix = resolutionMode === '4k' ? '-4k-uhd' : resolutionMode === '4k_dci' ? '-4k-dci' : resolutionMode === '2x' ? '-2x-hd' : '';
+      downloadLink.download = `${cleanName}${resSuffix}-smvm-ia.${fileExt}`;
       downloadLink.href = dataUrl;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
 
       confetti({
-        particleCount: 50,
-        spread: 60,
+        particleCount: 60,
+        spread: 70,
         origin: { y: 0.7 },
       });
 
       setTimeout(() => {
         setIsExporting(false);
         onClose();
-      }, 800);
+      }, 700);
     } catch (err) {
       console.error('Erro ao exportar imagem:', err);
       setIsExporting(false);
     }
   };
-
-  const naturalWidth = imageElementRef.current?.naturalWidth || 1600;
-  const naturalHeight = imageElementRef.current?.naturalHeight || 1067;
-  const finalW = Math.round(naturalWidth * scale);
-  const finalH = Math.round(naturalHeight * scale);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
@@ -102,8 +116,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <Download className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Exportar Imagem</h3>
-              <p className="text-xs text-neutral-400">Download em alta resolução sem perda de detalhes</p>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Exportar Imagem</span>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  Suporte 4K UHD
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-400">Exportação em altíssima definição com reconstrução de detalhes neurais</p>
             </div>
           </div>
           <button
@@ -141,35 +160,95 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           </div>
 
-          {/* Resolution Scale */}
+          {/* Resolution Mode Selection (1x, 2x, 4K UHD, 4K DCI) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-semibold text-neutral-300">Escala / Resolução</label>
-              <span className="text-neutral-400 font-mono">
-                {finalW} &times; {finalH} px
-              </span>
+              <label className="font-semibold text-neutral-300">Qualidade de Resolução</label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-amber-400 font-mono font-bold">
+                  {finalW} &times; {finalH} px
+                </span>
+                <span className="text-[10px] px-1 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
+                  {megapixels} MP
+                </span>
+              </div>
             </div>
+
             <div className="grid grid-cols-2 gap-2">
+              {/* 4K Ultra-HD option (Preferred) */}
               <button
-                onClick={() => setScale(1)}
-                className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                  scale === 1
-                    ? 'border-emerald-500 bg-neutral-800 text-white'
-                    : 'border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white'
+                type="button"
+                onClick={() => setResolutionMode('4k')}
+                className={`p-3 rounded-xl border text-left transition-all relative ${
+                  resolutionMode === '4k'
+                    ? 'border-amber-500 bg-amber-950/30 text-white ring-1 ring-amber-500 shadow-md shadow-amber-500/10'
+                    : 'border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700'
                 }`}
               >
-                <span>1x (Tamanho Original)</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    4K Ultra-HD
+                  </span>
+                  <span className="text-[9px] font-bold px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    3840 UHD
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-400 block mt-1">
+                  Padrão estúdio fotográfico com micro-nitidez
+                </span>
               </button>
+
+              {/* 4K Cinema DCI */}
               <button
-                onClick={() => setScale(2)}
-                className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                  scale === 2
-                    ? 'border-emerald-500 bg-neutral-800 text-white'
+                type="button"
+                onClick={() => setResolutionMode('4k_dci')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  resolutionMode === '4k_dci'
+                    ? 'border-indigo-500 bg-indigo-950/30 text-white ring-1 ring-indigo-500'
+                    : 'border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-300 flex items-center gap-1">
+                    <MonitorPlay className="w-3.5 h-3.5 text-indigo-400" />
+                    4K Cinema DCI
+                  </span>
+                  <span className="text-[9px] font-bold px-1 rounded bg-indigo-500/20 text-indigo-300">
+                    4096 px
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-400 block mt-1">
+                  Resolução de tela cinema cinematográfica
+                </span>
+              </button>
+
+              {/* 2x Super Resolução */}
+              <button
+                type="button"
+                onClick={() => setResolutionMode('2x')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  resolutionMode === '2x'
+                    ? 'border-emerald-500 bg-neutral-800 text-white ring-1 ring-emerald-500'
                     : 'border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>2x (Super Resolução HD)</span>
+                <span className="text-xs font-bold text-white block">2x Super Resolução</span>
+                <span className="text-[10px] text-neutral-400">Dobra a largura e altura</span>
+              </button>
+
+              {/* 1x Original */}
+              <button
+                type="button"
+                onClick={() => setResolutionMode('1x')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  resolutionMode === '1x'
+                    ? 'border-emerald-500 bg-neutral-800 text-white ring-1 ring-emerald-500'
+                    : 'border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white'
+                }`}
+              >
+                <span className="text-xs font-bold text-white block">1x Tamanho Original</span>
+                <span className="text-[10px] text-neutral-400">Sem redimensionamento</span>
               </button>
             </div>
           </div>
@@ -189,6 +268,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 onChange={(e) => setQuality(parseInt(e.target.value))}
                 className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
+            </div>
+          )}
+
+          {/* 4K Super-Resolution Guarantee Badge */}
+          {(resolutionMode === '4k' || resolutionMode === '4k_dci') && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+              <div className="text-xs">
+                <span className="font-bold text-amber-300 block">Reconstrução Neural 4K Ativa</span>
+                <span className="text-amber-200/80 text-[11px]">
+                  Filtro Laplacian de alta frequência ativado para preservar texturas finas, micro-contraste e eliminar artefatos.
+                </span>
+              </div>
             </div>
           )}
 

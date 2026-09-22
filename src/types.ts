@@ -27,6 +27,22 @@ export interface PhotoAdjustments {
   watermarkOpacity: number; // 10 to 100
   watermarkScale: number; // 10 to 100
   watermarkPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'center';
+  customWatermarkUrl?: string; // Custom logo / image URL or dataURL
+  customWatermarkName?: string; // Custom logo label/filename
+  // 4K Ultra-HD Super-Resolution & Auto-Conversion
+  ultra4kEnabled?: boolean;
+  ultra4kSharpness?: number; // 0 to 100
+  ultra4kDenoise?: number; // 0 to 100
+}
+
+export interface CustomReference {
+  id: string;
+  title: string;
+  url: string;
+  thumb: string;
+  width?: number;
+  height?: number;
+  isCustom?: boolean;
 }
 
 export interface Preset {

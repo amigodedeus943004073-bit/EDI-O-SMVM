@@ -85,6 +85,30 @@ export function executePhotoCommand(
     appliedChanges.push('Calibração Canon EOS L-Series (tons de pele quentes + micro-nitidez 85mm f/1.2)');
   }
 
+  // 2.5. 4K Ultra-HD & Conversão Automática
+  if (
+    text.includes('4k') ||
+    text.includes('ultra hd') ||
+    text.includes('ultrahd') ||
+    text.includes('super resolucao') ||
+    text.includes('super resolução') ||
+    text.includes('upscale') ||
+    text.includes('conversão automatica') ||
+    text.includes('conversao automatica') ||
+    text.includes('alta definicao') ||
+    text.includes('alta definição')
+  ) {
+    newAdj.ultra4kEnabled = true;
+    newAdj.ultra4kSharpness = 75;
+    newAdj.ultra4kDenoise = 22;
+    newAdj.clarity = Math.max(currentAdj.clarity || 0, 40);
+    newAdj.sharpness = Math.max(currentAdj.sharpness, 52);
+    newAdj.contrast = Math.max(currentAdj.contrast, 16);
+    newAdj.dehaze = Math.max(currentAdj.dehaze || 0, 20);
+    newAdj.whites = Math.max(currentAdj.whites || 0, 10);
+    appliedChanges.push('Qualidade 4K Ultra-HD Ativada (3840×2160, micro-contraste e reconstrução de textura)');
+  }
+
   // 3. Facial Retouch / Pele
   if (text.includes('pele') || text.includes('suavizar') || text.includes('retouch') || text.includes('retoque') || text.includes('rosto') || text.includes('rugas')) {
     newRetouch.smoothSkin = 55;
