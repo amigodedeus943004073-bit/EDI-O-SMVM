@@ -62,60 +62,93 @@ export function applyBlemishWrinklePass(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  blemishAmount: number, // 0 to 1
-  wrinkleAmount: number  // 0 to 1
+  blemishAmount: number,
+  wrinkleAmount: number
 ) {
-  if (blemishAmount <= 0.05 && wrinkleAmount <= 0.05) return;
+  if (blemishAmount <= 0.01 && wrinkleAmount <= 0.01) return;
+
   try {
     const imgData = ctx.getImageData(0, 0, width, height);
+    const src = new Uint8ClampedArray(imgData.data);
     const data = imgData.data;
-    const stride = width * 4;
+    const strength = Math.max(0.15, Math.min(1, Math.max(blemishAmount, wrinkleAmount)));
 
-    const blemishStrength = Math.min(1, blemishAmount);
-    const wrinkleStrength = Math.min(1, wrinkleAmount);
-    const combinedFactor = Math.max(blemishStrength, wrinkleStrength);
+    // Detecta pequenos outliers de luminosidade/cor em pele e substitui-os
+    // pela média de uma vizinhança maior. Isto produz uma remoção visível
+    // de manchas sem depender de uma API externa.
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        const idx = (y * width + x) * 4;
+        const r = src[idx], g = src[idx + 1], b = src[idx + 2];
 
-    // Dynamic edge threshold: pixels with high contrast difference (eyes, lips, edges) are protected
-    const edgeThreshold = 38 - combinedFactor * 14;
+        const skin = r > 45 && g > 25 && b > 15 &&
+          r > g * 0.9 && g > b * 0.75 && (r - b) > 8;
+        if (!skin) continue;
 
-    for (let y = 1; y < height - 1; y += 1) {
-      const row = y * stride;
-      for (let x = 1; x < width - 1; x += 1) {
-        const idx = row + x * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
+        const lum = r * 0.299 + g * 0.587 + b * 0.114;
+        let sumR = 0, sumG = 0, sumB = 0, sumL = 0, count = 0;
 
-        // Skin tone detection heuristic (warm tones with R > G > B)
-        const isSkinLike = r > 45 && g > 25 && b > 15 && r > g && g > b && (r - b) > 10;
-        if (!isSkinLike) continue;
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
+            if (Math.abs(dx) + Math.abs(dy) < 2) continue;
+            const n = ((y + dy) * width + (x + dx)) * 4;
+            const nr = src[n], ng = src[n + 1], nb = src[n + 2];
+            sumR += nr; sumG += ng; sumB += nb;
+            sumL += nr * 0.299 + ng * 0.587 + nb * 0.114;
+            count++;
+          }
+        }
 
-        // Sample 4 cross neighbors
-        const up = idx - stride;
-        const down = idx + stride;
-        const left = idx - 4;
-        const right = idx + 4;
+        const avgL = sumL / count;
+        const diff = Math.abs(lum - avgL);
 
-        const avgR = (data[up] + data[down] + data[left] + data[right]) * 0.25;
-        const avgG = (data[up + 1] + data[down + 1] + data[left + 1] + data[right + 1]) * 0.25;
-        const avgB = (data[up + 2] + data[down + 2] + data[left + 2] + data[right + 2]) * 0.25;
+        // Pequenos pontos escuros/claros são tratados como manchas.
+        // Bordas fortes permanecem protegidas.
+        if (diff >= 7 && diff <= 55) {
+          const blend = Math.min(0.92, 0.45 + strength * 0.45);
+          const avgR = sumR / count;
+          const avgG = sumG / count;
+          const avgB = sumB / count;
 
-        const diff = Math.abs(r - avgR) + Math.abs(g - avgG) + Math.abs(b - avgB);
+          data[idx] = Math.round(r * (1 - blend) + avgR * blend);
+          data[idx + 1] = Math.round(g * (1 - blend) + avgG * blend);
+          data[idx + 2] = Math.round(b * (1 - blend) + avgB * blend);
+        }
+      }
+    }
 
-        // If difference is small or moderate (texture, pore, blemish or fine wrinkle crease), smooth it!
-        // If difference is huge (eye boundary, lash, hair), preserve edge!
-        if (diff < edgeThreshold * 3) {
-          const blendRate = Math.min(0.75, combinedFactor * 0.7);
-          data[idx] = Math.round(r * (1 - blendRate) + avgR * blendRate);
-          data[idx + 1] = Math.round(g * (1 - blendRate) + avgG * blendRate);
-          data[idx + 2] = Math.round(b * (1 - blendRate) + avgB * blendRate);
+    // Segunda passagem leve para suavizar a transição dos pontos tratados.
+    if (strength > 0.55) {
+      const pass = new Uint8ClampedArray(data);
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = (y * width + x) * 4;
+          const r = pass[idx], g = pass[idx + 1], b = pass[idx + 2];
+          const skin = r > 45 && g > 25 && b > 15 && r > g * 0.9 && g > b * 0.75;
+          if (!skin) continue;
+
+          const n1 = idx - width * 4;
+          const n2 = idx + width * 4;
+          const n3 = idx - 4;
+          const n4 = idx + 4;
+          const ar = (pass[n1] + pass[n2] + pass[n3] + pass[n4]) / 4;
+          const ag = (pass[n1 + 1] + pass[n2 + 1] + pass[n3 + 1] + pass[n4 + 1]) / 4;
+          const ab = (pass[n1 + 2] + pass[n2 + 2] + pass[n3 + 2] + pass[n4 + 2]) / 4;
+          const localDiff = Math.abs(r - ar) + Math.abs(g - ag) + Math.abs(b - ab);
+
+          if (localDiff < 30) {
+            const blend = 0.12 * strength;
+            data[idx] = Math.round(r * (1 - blend) + ar * blend);
+            data[idx + 1] = Math.round(g * (1 - blend) + ag * blend);
+            data[idx + 2] = Math.round(b * (1 - blend) + ab * blend);
+          }
         }
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
   } catch (err) {
-    console.warn('Blemish & wrinkle neural pass skipped:', err);
+    console.warn('Blemish & wrinkle removal skipped:', err);
   }
 }
 
