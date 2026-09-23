@@ -18,7 +18,7 @@ export const SamplePickerBar: React.FC<SamplePickerBarProps> = ({
   onUploadCustomLogo,
 }) => {
   return (
-    <div className="h-14 border-t border-neutral-800 bg-neutral-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-20 select-none overflow-x-auto scrollbar-none">
+    <div className="smvm-samplebar h-14 border-t border-neutral-800 bg-neutral-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-20 select-none overflow-x-auto scrollbar-none">
       <div className="flex items-center gap-2 text-xs text-neutral-400 shrink-0">
         <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
         <span className="hidden md:inline font-medium">Fotos de Demonstração & Referências:</span>
