@@ -919,7 +919,7 @@ export default function App() {
       />
 
       {/* 2. Main Studio Workspace: Left Tools | Canvas Stage | Right Inspector */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="smvm-workspace flex flex-1 min-w-0 overflow-hidden relative">
         {/* Left Tools Panel (Desktop: docked unless in fullscreen; Mobile: slide-in drawer) */}
         {!isFullscreen && (
           <div
