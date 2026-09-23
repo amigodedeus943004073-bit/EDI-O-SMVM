@@ -110,6 +110,23 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     };
   };
 
+  const paintMaskAt = (clientX: number, clientY: number) => {
+    if (!isEraserActive) return;
+    const canvas = maskCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.arc(x, y, eraserBrushSize / 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.78)';
+    ctx.fill();
+  };
+
   const handleMaskMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isEraserActive) return;
     setIsPaintingMask(true);
@@ -127,16 +144,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
 
   const handleMaskMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isPaintingMask || !isEraserActive) return;
-    const canvas = maskCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const { x, y } = getCanvasCoordinates(e);
-    ctx.beginPath();
-    ctx.arc(x, y, eraserBrushSize / 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
-    ctx.fill();
+    paintMaskAt(e.clientX, e.clientY);
   };
 
   const handleMaskMouseUp = () => {
@@ -553,7 +561,10 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
                   onMouseMove={handleMaskMouseMove}
                   onMouseUp={handleMaskMouseUp}
                   onMouseLeave={handleMaskMouseUp}
-                  className="absolute inset-0 w-full h-full z-20 cursor-crosshair"
+                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); handleMaskMouseDown(e as any); }}
+                  onPointerMove={(e) => handleMaskMouseMove(e as any)}
+                  onPointerUp={(e) => handleMaskMouseUp()}
+                  className="absolute inset-0 w-full h-full z-20 cursor-crosshair touch-none"
                 />
               )}
             </div>
