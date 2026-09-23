@@ -67,6 +67,7 @@ interface SidebarToolsProps {
   onRunSmartEnhance: () => void;
   onRunFaceRetouch: () => void;
   onRunBgRemoval: () => void;
+  onApplyBlemishRemoval: () => void;
   onRunGenerativePrompt: (promptText: string) => void;
   isProcessing: boolean;
   onExecuteCommand?: (commandText: string) => void;
@@ -100,6 +101,7 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
   onRunSmartEnhance,
   onRunFaceRetouch,
   onRunBgRemoval,
+  onApplyBlemishRemoval,
   onRunGenerativePrompt,
   isProcessing,
   onExecuteCommand,
@@ -616,6 +618,17 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
                 const val = facialRetouch[item.key];
                 return (
                   <div key={item.key} className="space-y-1 p-2.5 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
+                  {item.key === 'blemishRemoval' && val > 0 && (
+                    <button
+                      type="button"
+                      onClick={onApplyBlemishRemoval}
+                      disabled={isProcessing}
+                      className="w-full mb-2 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-neutral-800 text-white text-xs font-bold flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Aplicar Remoção de Manchas
+                    </button>
+                  )}
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5 text-neutral-200 font-medium">
                         <Icon className="w-3.5 h-3.5 text-pink-400" />
@@ -866,7 +879,7 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
                 disabled={isProcessing}
                 className="flex-1 py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md shadow-rose-600/20 transition-all"
               >
-                Remover Objeto
+                Aplicar Remoção
               </button>
             </div>
           </div>
