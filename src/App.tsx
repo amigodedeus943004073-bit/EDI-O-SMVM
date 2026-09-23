@@ -37,6 +37,7 @@ import {
 } from './utils/imageProcessing';
 import { parseCameraOrRawFile } from './utils/rawParser';
 import { executePhotoCommand } from './utils/commandEngine';
+import { callSmvmAI } from './lib/smvmAi';
 
 export default function App() {
   // Document and Image State
@@ -352,16 +353,11 @@ export default function App() {
     setProcessingMessage(`Interpretando instrução: "${promptText}"...`);
 
     try {
-      const res = await fetch('/api/ai/edit-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: promptText,
-          currentSettings: adjustments,
-        }),
+      const data = await callSmvmAI({
+        operation: 'command',
+        prompt: promptText,
+        currentSettings: adjustments,
       });
-
-      const data = await res.json();
       if (data.success && data.result) {
         const { actionTitle, adjustments: aiAdj, presetName } = data.result;
         const merged: PhotoAdjustments = {
@@ -407,16 +403,11 @@ export default function App() {
         }
       }
 
-      const res = await fetch('/api/ai/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: base64,
-          mimeType: 'image/jpeg',
-        }),
+      const data = await callSmvmAI({
+        operation: 'analyze',
+        image: base64,
+        mimeType: 'image/jpeg',
       });
-
-      const data = await res.json();
       if (data.success && data.analysis) {
         setAnalysis(data.analysis);
       }
@@ -573,17 +564,13 @@ export default function App() {
         }
       }
 
-      const res = await fetch('/api/ai/edit-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: commandText,
-          currentSettings: adjustments,
-          imageBase64: base64,
-        }),
+      const data = await callSmvmAI({
+        operation: 'command',
+        prompt: commandText,
+        image: base64,
+        currentSettings: adjustments,
+        mimeType: 'image/jpeg',
       });
-
-      const data = await res.json();
       if (data.success && data.result) {
         const { actionTitle, adjustments: aiAdj, presetName, explanation } = data.result;
         const merged: PhotoAdjustments = {
