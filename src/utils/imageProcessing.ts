@@ -23,9 +23,17 @@ export function buildCssFilter(
     // AI Blush & Lip Enhancement subtle vibrance
     saturationFactor += (retouch.blushTone * 0.0018) + (retouch.lipEnhance * 0.0024);
     
-    // AI Skin Smoothing: gentle micro-softening while preserving high-contrast facial contours
-    if (retouch.smoothSkin > 0 && blurAmount === 0) {
-      blurAmount = Math.min(0.85, (retouch.smoothSkin / 100) * 0.85);
+    // AI Skin Smoothing & Automatic Blemish/Wrinkle Removal:
+    // gentle micro-softening while preserving high-contrast facial contours
+    const effectiveBlemish = Math.max(retouch.blemishRemoval || 0, adj.blemishIntensity || 0);
+    const effectiveWrinkle = Math.max(retouch.wrinkleRemoval || 0, adj.wrinkleIntensity || 0);
+    const totalSkinSmoothing = Math.max(
+      retouch.smoothSkin,
+      effectiveBlemish * 0.7 + effectiveWrinkle * 0.6
+    );
+
+    if (totalSkinSmoothing > 0 && blurAmount === 0) {
+      blurAmount = Math.min(0.92, (totalSkinSmoothing / 100) * 0.92);
     }
   }
 
@@ -44,6 +52,71 @@ export function buildCssFilter(
   const blur = blurAmount > 0 ? `${blurAmount.toFixed(2)}px` : '0px';
 
   return `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) sepia(${sepia}) hue-rotate(${hue}deg) blur(${blur})`;
+}
+
+/**
+ * Intelligent Neural Skin Spot & Wrinkle Softener (Bilateral Filter Algorithm)
+ * Removes blemishes, pimples, spots and smooths deep wrinkle creases while preserving eye/mouth edge sharpness
+ */
+export function applyBlemishWrinklePass(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  blemishAmount: number, // 0 to 1
+  wrinkleAmount: number  // 0 to 1
+) {
+  if (blemishAmount <= 0.05 && wrinkleAmount <= 0.05) return;
+  try {
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+    const stride = width * 4;
+
+    const blemishStrength = Math.min(1, blemishAmount);
+    const wrinkleStrength = Math.min(1, wrinkleAmount);
+    const combinedFactor = Math.max(blemishStrength, wrinkleStrength);
+
+    // Dynamic edge threshold: pixels with high contrast difference (eyes, lips, edges) are protected
+    const edgeThreshold = 38 - combinedFactor * 14;
+
+    for (let y = 1; y < height - 1; y += 1) {
+      const row = y * stride;
+      for (let x = 1; x < width - 1; x += 1) {
+        const idx = row + x * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+
+        // Skin tone detection heuristic (warm tones with R > G > B)
+        const isSkinLike = r > 45 && g > 25 && b > 15 && r > g && g > b && (r - b) > 10;
+        if (!isSkinLike) continue;
+
+        // Sample 4 cross neighbors
+        const up = idx - stride;
+        const down = idx + stride;
+        const left = idx - 4;
+        const right = idx + 4;
+
+        const avgR = (data[up] + data[down] + data[left] + data[right]) * 0.25;
+        const avgG = (data[up + 1] + data[down + 1] + data[left + 1] + data[right + 1]) * 0.25;
+        const avgB = (data[up + 2] + data[down + 2] + data[left + 2] + data[right + 2]) * 0.25;
+
+        const diff = Math.abs(r - avgR) + Math.abs(g - avgG) + Math.abs(b - avgB);
+
+        // If difference is small or moderate (texture, pore, blemish or fine wrinkle crease), smooth it!
+        // If difference is huge (eye boundary, lash, hair), preserve edge!
+        if (diff < edgeThreshold * 3) {
+          const blendRate = Math.min(0.75, combinedFactor * 0.7);
+          data[idx] = Math.round(r * (1 - blendRate) + avgR * blendRate);
+          data[idx + 1] = Math.round(g * (1 - blendRate) + avgG * blendRate);
+          data[idx + 2] = Math.round(b * (1 - blendRate) + avgB * blendRate);
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  } catch (err) {
+    console.warn('Blemish & wrinkle neural pass skipped:', err);
+  }
 }
 
 /**
@@ -658,6 +731,19 @@ export async function renderExportCanvas({
     } catch (e) {
       console.warn('Erro ao desenhar marca d água:', e);
     }
+  }
+
+  // 8.5. Neural Blemish & Wrinkle Removal Pass
+  const blemishVal = Math.max(facialRetouch?.blemishRemoval || 0, adjustments.blemishIntensity || 0);
+  const wrinkleVal = Math.max(facialRetouch?.wrinkleRemoval || 0, adjustments.wrinkleIntensity || 0);
+  if (blemishVal > 0 || wrinkleVal > 0) {
+    applyBlemishWrinklePass(
+      ctx,
+      exportCanvas.width,
+      exportCanvas.height,
+      blemishVal / 100,
+      wrinkleVal / 100
+    );
   }
 
   // 9. 4K Ultra-HD Detail Reconstruction & Micro-Contrast Pass

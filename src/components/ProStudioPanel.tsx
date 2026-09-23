@@ -399,8 +399,67 @@ export const ProStudioPanel: React.FC<ProStudioPanelProps> = ({
         </div>
 
         <p className="text-[11px] text-neutral-400 leading-snug">
-          Insere a marca oficial SMVM com autenticidade vetorial na imagem exportada.
+          Insere o logotipo oficial SMVM ou seu próprio logotipo/marca carregado diretamente do seu dispositivo.
         </p>
+
+        {/* Custom Logo Upload from Device */}
+        <div className="p-2.5 rounded-lg bg-neutral-950/80 border border-neutral-800 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-neutral-200">Logo Personalizado:</span>
+            {adjustments.customWatermarkUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('customWatermarkUrl', '');
+                  onChange('customWatermarkName', '');
+                }}
+                className="text-[10px] text-rose-400 hover:text-rose-300"
+              >
+                Remover Logo
+              </button>
+            )}
+          </div>
+
+          {adjustments.customWatermarkUrl ? (
+            <div className="flex items-center gap-2 p-1.5 rounded-lg bg-neutral-900 border border-neutral-700/80">
+              <img
+                src={adjustments.customWatermarkUrl}
+                alt="Seu Logo"
+                className="w-10 h-10 object-contain rounded bg-neutral-950/50 p-1 border border-neutral-800"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-white font-medium block truncate">
+                  {adjustments.customWatermarkName || 'Logo do Dispositivo'}
+                </span>
+                <span className="text-[10px] text-emerald-400 font-semibold">✓ Ativo na imagem</span>
+              </div>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-dashed border-neutral-700 hover:border-blue-500 hover:bg-blue-500/5 cursor-pointer transition-colors text-xs text-neutral-300 font-medium">
+              <Compass className="w-3.5 h-3.5 text-blue-400" />
+              <span>Carregar Imagem do Logo (PNG/SVG)</span>
+              <input
+                type="file"
+                accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    const dataUrl = evt.target?.result as string;
+                    if (dataUrl) {
+                      onChange('customWatermarkUrl', dataUrl);
+                      onChange('customWatermarkName', file.name);
+                      onChange('watermarkEnabled', true);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+          )}
+        </div>
 
         {adjustments.watermarkEnabled && (
           <div className="space-y-3 pt-2 border-t border-neutral-800">

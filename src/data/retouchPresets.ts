@@ -2,6 +2,8 @@ import { FacialRetouchSettings, RetouchPreset } from '../types';
 
 export const DEFAULT_RETOUCH_SETTINGS: FacialRetouchSettings = {
   smoothSkin: 0,
+  blemishRemoval: 0,
+  wrinkleRemoval: 0,
   skinGlow: 0,
   eyeEnhance: 0,
   teethWhitening: 0,
@@ -13,12 +15,32 @@ export const DEFAULT_RETOUCH_SETTINGS: FacialRetouchSettings = {
 
 export const RETOUCH_PRESETS: RetouchPreset[] = [
   {
+    id: 'anti_blemish_wrinkle',
+    name: 'Remoção de Manchas & Rugas IA',
+    description: 'Foco intensivo na remoção de manchas, espinhas, marcas solares e rugas com aspecto natural.',
+    badge: 'Máxima Eficácia',
+    settings: {
+      smoothSkin: 60,
+      blemishRemoval: 85,
+      wrinkleRemoval: 80,
+      skinGlow: 35,
+      eyeEnhance: 40,
+      teethWhitening: 35,
+      underEyeBrighten: 65,
+      faceDefinition: 25,
+      blushTone: 15,
+      lipEnhance: 20,
+    },
+  },
+  {
     id: 'natural',
     name: 'Natural Balance IA',
     description: 'Suavização leve de textura, poros preservados e olhar vívido natural.',
     badge: 'Popular',
     settings: {
       smoothSkin: 35,
+      blemishRemoval: 45,
+      wrinkleRemoval: 35,
       skinGlow: 25,
       eyeEnhance: 30,
       teethWhitening: 20,
@@ -35,6 +57,8 @@ export const RETOUCH_PRESETS: RetouchPreset[] = [
     badge: 'Pro Fashion',
     settings: {
       smoothSkin: 65,
+      blemishRemoval: 75,
+      wrinkleRemoval: 60,
       skinGlow: 50,
       eyeEnhance: 55,
       teethWhitening: 45,
@@ -51,6 +75,8 @@ export const RETOUCH_PRESETS: RetouchPreset[] = [
     badge: 'Retrato',
     settings: {
       smoothSkin: 30,
+      blemishRemoval: 40,
+      wrinkleRemoval: 30,
       skinGlow: 35,
       eyeEnhance: 70,
       teethWhitening: 75,
@@ -67,6 +93,8 @@ export const RETOUCH_PRESETS: RetouchPreset[] = [
     badge: 'Verão',
     settings: {
       smoothSkin: 40,
+      blemishRemoval: 50,
+      wrinkleRemoval: 40,
       skinGlow: 75,
       eyeEnhance: 35,
       teethWhitening: 30,
@@ -83,6 +111,8 @@ export const RETOUCH_PRESETS: RetouchPreset[] = [
     badge: 'Definição',
     settings: {
       smoothSkin: 25,
+      blemishRemoval: 35,
+      wrinkleRemoval: 25,
       skinGlow: 15,
       eyeEnhance: 45,
       teethWhitening: 35,

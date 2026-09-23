@@ -11,6 +11,8 @@ import { RightInspector } from './components/RightInspector';
 import { ExportModal } from './components/ExportModal';
 import { SamplePickerBar } from './components/SamplePickerBar';
 import { CommandBar } from './components/CommandBar';
+import { BatchCleanerModal } from './components/BatchCleanerModal';
+import { AssistantModal } from './components/AssistantModal';
 import {
   PhotoAdjustments,
   Preset,
@@ -62,6 +64,10 @@ export default function App() {
   // Modals & Export (100% Free - Sem limites de créditos)
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [auto4kEnabled, setAuto4kEnabled] = useState<boolean>(true);
+  const [isBatchCleanerOpen, setIsBatchCleanerOpen] = useState<boolean>(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // AI & Inspection States
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -490,15 +496,50 @@ export default function App() {
     setCurrentHistoryIndex(0);
   };
 
-  // Command Execution Engine (Natural Portuguese & Shortcuts)
+  // Command Execution Engine (Natural Portuguese & Shortcuts with AI Intelligence)
   const handleExecuteCommand = async (commandText: string): Promise<boolean> => {
+    const cleanLower = commandText.toLowerCase().trim();
+
+    // Check if user requested assistant or phone number 943004073
+    if (
+      cleanLower.includes('assistente') ||
+      cleanLower.includes('943004073') ||
+      cleanLower.includes('falar com') ||
+      cleanLower.includes('suporte') ||
+      cleanLower.includes('ajuda') ||
+      cleanLower.includes('contato')
+    ) {
+      setIsAssistantOpen(true);
+      setLastCommandFeedback('Assistente aberto! Telefone / WhatsApp direto: 943004073');
+      const newCmd: AICommand = {
+        id: `cmd-${Date.now()}`,
+        text: commandText,
+        timestamp: new Date(),
+        status: 'applied',
+      };
+      setCommandHistory((prev) => [newCmd, ...prev.slice(0, 19)]);
+      return true;
+    }
+
+    // Check if user wants batch clean via command
+    if (
+      cleanLower.includes('lote') ||
+      cleanLower.includes('massa') ||
+      cleanLower.includes('10 fotos')
+    ) {
+      setIsBatchCleanerOpen(true);
+      setLastCommandFeedback('Painel de Limpeza & Edição em Massa (até 10 fotos) aberto!');
+      return true;
+    }
+
     setIsProcessing(true);
-    setProcessingMessage(`Executando comando IA: "${commandText}"...`);
+    setProcessingMessage(`Processando comando com IA: "${commandText}"...`);
 
     try {
+      // 1. Try local neural rule engine first for instant response
       const result = executePhotoCommand(commandText, adjustments, facialRetouch);
 
-      if (result.success) {
+      if (result.success && result.appliedChanges.length > 0) {
         if (result.newAdjustments) {
           setAdjustments((prev) => ({ ...prev, ...result.newAdjustments }));
         }
@@ -517,14 +558,91 @@ export default function App() {
         pushHistory(`Comando IA: ${commandText}`, { ...adjustments, ...(result.newAdjustments || {}) });
         setIsProcessing(false);
         return true;
+      }
+
+      // 2. If not matched, query backend Gemini generative command API (/api/ai/edit-prompt)
+      let base64 = '';
+      if (imageElementRef.current) {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(800, imageElementRef.current.naturalWidth || 800);
+        canvas.height = Math.min(600, imageElementRef.current.naturalHeight || 600);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(imageElementRef.current, 0, 0, canvas.width, canvas.height);
+          base64 = canvas.toDataURL('image/jpeg', 0.8);
+        }
+      }
+
+      const res = await fetch('/api/ai/edit-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: commandText,
+          currentSettings: adjustments,
+          imageBase64: base64,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.result) {
+        const { actionTitle, adjustments: aiAdj, presetName, explanation } = data.result;
+        const merged: PhotoAdjustments = {
+          ...adjustments,
+          brightness: aiAdj.brightness ?? adjustments.brightness,
+          contrast: aiAdj.contrast ?? adjustments.contrast,
+          saturation: aiAdj.saturation ?? adjustments.saturation,
+          warmth: aiAdj.warmth ?? adjustments.warmth,
+          sharpness: aiAdj.sharpness ?? adjustments.sharpness,
+          blur: aiAdj.blur ?? adjustments.blur,
+          vignette: aiAdj.vignette ?? adjustments.vignette,
+          sepia: aiAdj.sepia ?? adjustments.sepia,
+          hueRotate: aiAdj.hueRotate ?? adjustments.hueRotate,
+        };
+
+        // If the command is related to skin, spots, or wrinkles, activate neural retouch
+        const lowerCmd = commandText.toLowerCase();
+        if (
+          lowerCmd.includes('mancha') ||
+          lowerCmd.includes('ruga') ||
+          lowerCmd.includes('pele') ||
+          lowerCmd.includes('espinha') ||
+          lowerCmd.includes('acne')
+        ) {
+          setFacialRetouch((prev) => ({
+            ...prev,
+            smoothSkin: Math.max(prev.smoothSkin, 60),
+            blemishRemoval: Math.max(prev.blemishRemoval, 85),
+            wrinkleRemoval: Math.max(prev.wrinkleRemoval, 80),
+            underEyeBrighten: Math.max(prev.underEyeBrighten, 60),
+          }));
+          merged.autoBlemishRemoval = true;
+          merged.blemishIntensity = 85;
+          merged.wrinkleIntensity = 80;
+        }
+
+        setAdjustments(merged);
+        setSelectedPresetId(presetName || 'custom');
+        const feedbackMsg = explanation || actionTitle || `Comando IA aplicado: "${commandText}"`;
+        setLastCommandFeedback(feedbackMsg);
+
+        const newCmd: AICommand = {
+          id: `cmd-${Date.now()}`,
+          text: commandText,
+          timestamp: new Date(),
+          status: 'applied',
+        };
+        setCommandHistory((prev) => [newCmd, ...prev.slice(0, 19)]);
+        pushHistory(actionTitle || `Comando IA: ${commandText}`, merged);
+        setIsProcessing(false);
+        return true;
       } else {
-        setLastCommandFeedback(result.message);
+        setLastCommandFeedback(result.message || 'Comando não reconhecido pela IA.');
         setIsProcessing(false);
         return false;
       }
     } catch (err) {
       console.error('Erro na execução do comando:', err);
-      setLastCommandFeedback('Erro ao processar comando.');
+      setLastCommandFeedback('Erro ao processar comando com IA.');
       setIsProcessing(false);
       return false;
     }
@@ -729,6 +847,29 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentHistoryIndex, history]);
 
+  // Fullscreen API toggle & sync listener
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn('Erro ao ativar fullscreen:', err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn('Erro ao sair do fullscreen:', err);
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
     <div
       onDragOver={(e) => e.preventDefault()}
@@ -759,6 +900,12 @@ export default function App() {
         onUploadClick={() => fileInputRef.current?.click()}
         isAuto4kEnabled={auto4kEnabled}
         onToggleAuto4k={handleToggleAuto4k}
+        onOpenBatchCleaner={() => setIsBatchCleanerOpen(true)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
       {/* 1.5 Quick Command Bar */}
@@ -768,44 +915,84 @@ export default function App() {
         history={commandHistory}
         lastFeedback={lastCommandFeedback}
         onClearFeedback={() => setLastCommandFeedback(null)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
       {/* 2. Main Studio Workspace: Left Tools | Canvas Stage | Right Inspector */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Left Tools Panel */}
-        <SidebarTools
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          adjustments={adjustments}
-          setAdjustments={setAdjustments}
-          facialRetouch={facialRetouch}
-          setFacialRetouch={setFacialRetouch}
-          onApplyRetouchPreset={handleApplyRetouchPreset}
-          onResetRetouch={handleResetRetouch}
-          onRunAutoFacialRetouch={handleRunAutoFacialRetouch}
-          selectedPresetId={selectedPresetId}
-          onSelectPreset={handleSelectPreset}
-          selectedBackground={selectedBackground}
-          onSelectBackground={handleSelectBackground}
-          selectedCropRatio={selectedCropRatio}
-          onSelectCropRatio={handleSelectCropRatio}
-          eraserBrushSize={eraserBrushSize}
-          setEraserBrushSize={setEraserBrushSize}
-          onApplyEraser={handleApplyEraser}
-          onClearEraserMask={handleClearEraserMask}
-          onRunSmartEnhance={handleRunSmartEnhance}
-          onRunFaceRetouch={handleRunFaceRetouch}
-          onRunBgRemoval={handleRunBgRemoval}
-          onRunGenerativePrompt={handleRunGenerativePrompt}
-          isProcessing={isProcessing}
-          onExecuteCommand={handleExecuteCommand}
-          onLoadSmvmReference={handleLoadSmvmReference}
-          isAuto4kEnabled={auto4kEnabled}
-          onToggleAuto4k={handleToggleAuto4k}
-          onConvertTo4k={handleConvertTo4k}
-        />
+        {/* Left Tools Panel (Desktop: docked unless in fullscreen; Mobile: slide-in drawer) */}
+        {!isFullscreen && (
+          <div
+            className={`
+              fixed lg:static inset-y-0 left-0 z-40 lg:z-20 flex flex-col h-full transition-transform duration-300 ease-in-out
+              ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}
+          >
+            <div className="flex flex-col h-full bg-neutral-900 border-r border-neutral-800 shadow-2xl lg:shadow-none w-80 md:w-96">
+              {/* Mobile Drawer Close Button */}
+              <div className="lg:hidden flex items-center justify-between p-3 border-b border-neutral-800 bg-neutral-950">
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Ferramentas SMVM IA
+                </span>
+                <button
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className="text-xs px-2.5 py-1 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                >
+                  Fechar
+                </button>
+              </div>
 
-        {/* Center Canvas Stage */}
+              <SidebarTools
+                activeTab={activeTab}
+                setActiveTab={(tab) => {
+                  setActiveTab(tab);
+                  // Auto close drawer on small screens when selecting a tab
+                  if (window.innerWidth < 1024 && tab !== 'adjust' && tab !== 'retouch' && tab !== 'pro_studio') {
+                    setIsMobileSidebarOpen(false);
+                  }
+                }}
+                adjustments={adjustments}
+                setAdjustments={setAdjustments}
+                facialRetouch={facialRetouch}
+                setFacialRetouch={setFacialRetouch}
+                onApplyRetouchPreset={handleApplyRetouchPreset}
+                onResetRetouch={handleResetRetouch}
+                onRunAutoFacialRetouch={handleRunAutoFacialRetouch}
+                selectedPresetId={selectedPresetId}
+                onSelectPreset={handleSelectPreset}
+                selectedBackground={selectedBackground}
+                onSelectBackground={handleSelectBackground}
+                selectedCropRatio={selectedCropRatio}
+                onSelectCropRatio={handleSelectCropRatio}
+                eraserBrushSize={eraserBrushSize}
+                setEraserBrushSize={setEraserBrushSize}
+                onApplyEraser={handleApplyEraser}
+                onClearEraserMask={handleClearEraserMask}
+                onRunSmartEnhance={handleRunSmartEnhance}
+                onRunFaceRetouch={handleRunFaceRetouch}
+                onRunBgRemoval={handleRunBgRemoval}
+                onRunGenerativePrompt={handleRunGenerativePrompt}
+                isProcessing={isProcessing}
+                onExecuteCommand={handleExecuteCommand}
+                onLoadSmvmReference={handleLoadSmvmReference}
+                isAuto4kEnabled={auto4kEnabled}
+                onToggleAuto4k={handleToggleAuto4k}
+                onConvertTo4k={handleConvertTo4k}
+                onOpenAssistant={() => setIsAssistantOpen(true)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile backdrop overlay when drawer is open */}
+        {isMobileSidebarOpen && !isFullscreen && (
+          <div
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="fixed inset-0 bg-neutral-950/70 backdrop-blur-sm z-30 lg:hidden"
+          />
+        )}
+
+        {/* Center Canvas Stage (expands to full screen when isFullscreen is active) */}
         <CanvasStage
           imageSrc={imageSrc}
           originalImageSrc={originalImageSrc}
@@ -825,32 +1012,81 @@ export default function App() {
           cameraMetadata={cameraMetadata}
         />
 
-        {/* Right Inspector & AI Vision Panel */}
-        <RightInspector
-          histogramData={histogramData}
-          imageMeta={imageMeta}
-          analysis={analysis}
-          isAnalyzing={isAnalyzing}
-          onRunAnalysis={handleRunAnalysis}
-          onApplyRecommendedAdjustments={(adj, preset) => {
-            setAdjustments(adj);
-            if (preset) setSelectedPresetId(preset);
-            pushHistory('Ajustes Recomendados pela IA', adj, selectedBackground.id, preset);
-          }}
-          history={history}
-          currentHistoryIndex={currentHistoryIndex}
-          onJumpToHistory={handleJumpToHistory}
-        />
+        {/* Right Inspector & AI Vision Panel (hidden in fullscreen or mobile) */}
+        {!isFullscreen && (
+          <div className="hidden xl:block h-full">
+            <RightInspector
+              histogramData={histogramData}
+              imageMeta={imageMeta}
+              analysis={analysis}
+              isAnalyzing={isAnalyzing}
+              onRunAnalysis={handleRunAnalysis}
+              onApplyRecommendedAdjustments={(adj, preset) => {
+                setAdjustments(adj);
+                if (preset) setSelectedPresetId(preset);
+                pushHistory('Ajustes Recomendados pela IA', adj, selectedBackground.id, preset);
+              }}
+              history={history}
+              currentHistoryIndex={currentHistoryIndex}
+              onJumpToHistory={handleJumpToHistory}
+            />
+          </div>
+        )}
       </div>
 
-      {/* 3. Bottom Demo Strip & Quick Switcher */}
-      <SamplePickerBar
-        currentImageId={currentImageId}
-        onSelectSample={handleSelectSample}
-        onUploadClick={() => fileInputRef.current?.click()}
+      {/* 3. Bottom Demo Strip & Quick Switcher (hidden in fullscreen) */}
+      {!isFullscreen && (
+        <SamplePickerBar
+          currentImageId={currentImageId}
+          onSelectSample={handleSelectSample}
+          onUploadClick={() => fileInputRef.current?.click()}
+          onOpenBatchCleaner={() => setIsBatchCleanerOpen(true)}
+          onUploadCustomLogo={(dataUrl, fileName) => {
+            setAdjustments((prev) => ({
+              ...prev,
+              watermarkEnabled: true,
+              customWatermarkUrl: dataUrl,
+              customWatermarkName: fileName,
+            }));
+            setLastCommandFeedback(`Logotipo "${fileName}" carregado e posicionado na foto!`);
+          }}
+        />
+      )}
+
+      {/* 4. Batch Clean Up Modal (Até 10 fotos) */}
+      <BatchCleanerModal
+        isOpen={isBatchCleanerOpen}
+        onClose={() => setIsBatchCleanerOpen(false)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+        onLoadSinglePhotoIntoCanvas={(url, name) => {
+          setCurrentImageId(null);
+          setImageSrc(url);
+          setOriginalImageSrc(url);
+          setDocumentName(name);
+          setAdjustments({
+            ...DEFAULT_ADJUSTMENTS,
+            ultra4kEnabled: true,
+            blemishIntensity: 85,
+            wrinkleIntensity: 80,
+          });
+          setFacialRetouch({
+            ...DEFAULT_RETOUCH_SETTINGS,
+            smoothSkin: 60,
+            blemishRemoval: 85,
+            wrinkleRemoval: 80,
+          });
+          pushHistory(`Carregada do Lote: ${name}`, DEFAULT_ADJUSTMENTS);
+        }}
       />
 
-      {/* 4. Export Modal */}
+      {/* 4.5. Assistant Contact & Support Modal (943004073) */}
+      <AssistantModal
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        assistantNumber="943004073"
+      />
+
+      {/* 5. Export Modal */}
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}

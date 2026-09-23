@@ -513,7 +513,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
                 />
               )}
 
-              {/* SMVM Official Watermark Stamp */}
+              {/* SMVM Official or Custom Device Logo Watermark Stamp */}
               {adjustments.watermarkEnabled && (
                 <div
                   className={`absolute z-20 pointer-events-none p-3 transition-opacity ${
@@ -529,13 +529,17 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
                 >
                   <div className="flex items-center gap-2 bg-neutral-950/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-neutral-700/60 shadow-xl">
                     <img
-                      src={SMVM_LOGO_DATA_URL}
-                      alt="SMVM IA"
-                      className="w-5 h-5 object-contain"
+                      src={adjustments.customWatermarkUrl || SMVM_LOGO_DATA_URL}
+                      alt={adjustments.customWatermarkName || 'Logo'}
+                      className="w-5 h-5 object-contain rounded"
                     />
                     <div className="flex flex-col">
-                      <span className="text-[11px] font-black tracking-wider text-white">SMVM IA</span>
-                      <span className="text-[8px] font-medium text-blue-400 -mt-0.5">Estúdio Pro</span>
+                      <span className="text-[11px] font-black tracking-wider text-white truncate max-w-[130px]">
+                        {adjustments.customWatermarkName ? adjustments.customWatermarkName.replace(/\.[^/.]+$/, '') : 'SMVM IA'}
+                      </span>
+                      <span className="text-[8px] font-medium text-blue-400 -mt-0.5">
+                        {adjustments.customWatermarkUrl ? 'Logo Personalizado' : 'Estúdio Pro'}
+                      </span>
                     </div>
                   </div>
                 </div>

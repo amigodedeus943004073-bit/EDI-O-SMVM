@@ -284,6 +284,11 @@ Valores numéricos:
       title = "Monocromático Noir de Alto Contraste";
       desc = "Conversão em preto e branco clássico de alto alcance dinâmico com pretos profundos e brancos puros.";
       preset = "film_noir";
+    } else if (p.includes("mancha") || p.includes("ruga") || p.includes("espinha") || p.includes("acne") || p.includes("pele")) {
+      adj = { brightness: 6, contrast: 10, saturation: 8, warmth: 8, sharpness: 35, blur: 0, vignette: 5, sepia: 0, hueRotate: 0 };
+      title = "Remoção de Manchas, Rugas & Retoque Facial";
+      desc = "Filtragem neural bilateral aplicada para apagar imperfeições, manchas e linhas de expressão com textura de pele natural.";
+      preset = "editorial";
     }
 
     return res.json({

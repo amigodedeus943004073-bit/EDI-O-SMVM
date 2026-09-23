@@ -31,8 +31,14 @@ export function executePhotoCommand(
     };
   }
 
-  // 1. Reset / Original commands
-  if (text.includes('reset') || text.includes('original') || text.includes('padrao') || text.includes('padrão') || text.includes('limpar')) {
+  // 1. Reset / Original commands (avoid matching 'limpeza de manchas' or 'limpar manchas')
+  if (
+    text.includes('reset') ||
+    text.includes('original') ||
+    text.includes('padrao') ||
+    text.includes('padrão') ||
+    (text.includes('limpar') && !text.includes('mancha') && !text.includes('ruga') && !text.includes('pele') && !text.includes('espinha'))
+  ) {
     return {
       success: true,
       message: 'Todos os parâmetros foram restaurados para o padrão original da câmera.',
@@ -109,12 +115,36 @@ export function executePhotoCommand(
     appliedChanges.push('Qualidade 4K Ultra-HD Ativada (3840×2160, micro-contraste e reconstrução de textura)');
   }
 
-  // 3. Facial Retouch / Pele
-  if (text.includes('pele') || text.includes('suavizar') || text.includes('retouch') || text.includes('retoque') || text.includes('rosto') || text.includes('rugas')) {
+  // 3. Facial Retouch / Remoção de manchas / Rugas / Pele
+  if (
+    text.includes('mancha') ||
+    text.includes('manchas') ||
+    text.includes('ruga') ||
+    text.includes('rugas') ||
+    text.includes('espinha') ||
+    text.includes('acne') ||
+    text.includes('olheira') ||
+    text.includes('olheiras') ||
+    text.includes('marcas') ||
+    text.includes('imperfeic') ||
+    text.includes('imperfeiç')
+  ) {
+    newRetouch.smoothSkin = 65;
+    newRetouch.blemishRemoval = 85;
+    newRetouch.wrinkleRemoval = 80;
+    newRetouch.underEyeBrighten = 65;
+    newRetouch.skinGlow = 35;
+    newAdj.autoBlemishRemoval = true;
+    newAdj.blemishIntensity = 85;
+    newAdj.wrinkleIntensity = 80;
+    appliedChanges.push('Remoção Automática Neural de Manchas, Rugas e Imperfeições ativada (85% eficácia)');
+  } else if (text.includes('pele') || text.includes('suavizar') || text.includes('retouch') || text.includes('retoque') || text.includes('rosto')) {
     newRetouch.smoothSkin = 55;
+    newRetouch.blemishRemoval = 60;
+    newRetouch.wrinkleRemoval = 50;
     newRetouch.skinGlow = 40;
     newRetouch.underEyeBrighten = 45;
-    appliedChanges.push('Retoque Facial IA: pele aveludada, tom uniforme e atenuação de olheiras');
+    appliedChanges.push('Retoque Facial IA: pele aveludada, tom uniforme e atenuação de linhas');
   }
 
   // 4. Olhos / Dentes / Sorriso

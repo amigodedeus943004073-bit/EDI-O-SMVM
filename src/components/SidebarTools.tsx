@@ -26,6 +26,8 @@ import {
   UserCheck,
   Terminal,
   Send,
+  Phone,
+  Bot,
 } from 'lucide-react';
 import {
   ActiveToolTab,
@@ -72,6 +74,7 @@ interface SidebarToolsProps {
   isAuto4kEnabled?: boolean;
   onToggleAuto4k?: () => void;
   onConvertTo4k?: () => void;
+  onOpenAssistant?: () => void;
 }
 
 export const SidebarTools: React.FC<SidebarToolsProps> = ({
@@ -104,6 +107,7 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
   isAuto4kEnabled = true,
   onToggleAuto4k,
   onConvertTo4k,
+  onOpenAssistant,
 }) => {
   const [generativePrompt, setGenerativePrompt] = useState('');
   const [commandInput, setCommandInput] = useState('');
@@ -536,9 +540,25 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
 
               {[
                 {
+                  key: 'blemishRemoval' as keyof FacialRetouchSettings,
+                  label: 'Remoção de Manchas & Espinhas IA',
+                  sub: 'Detecta e apaga imperfeições, manchas e marcas na pele',
+                  icon: Sparkles,
+                  color: 'accent-rose-500',
+                  badge: 'Eficaz',
+                },
+                {
+                  key: 'wrinkleRemoval' as keyof FacialRetouchSettings,
+                  label: 'Atenuação de Rugas & Linhas',
+                  sub: 'Atenua linhas de expressão e rugas na testa, olhos e boca',
+                  icon: Wand2,
+                  color: 'accent-pink-500',
+                  badge: 'Natural',
+                },
+                {
                   key: 'smoothSkin' as keyof FacialRetouchSettings,
                   label: 'Suavização de Pele IA',
-                  sub: 'Atenua marcas & uniformiza textura mantendo poros',
+                  sub: 'Atenua textura e uniformiza o tom mantendo poros',
                   icon: UserCheck,
                   color: 'accent-pink-500',
                 },
@@ -951,8 +971,8 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
         )}
       </div>
 
-      {/* Bottom Status Banner: 100% Gratuito & Ilimitado */}
-      <div className="p-3 border-t border-neutral-800 bg-neutral-950 flex items-center justify-between">
+      {/* Bottom Status Banner: 100% Gratuito & Assistente */}
+      <div className="p-3 border-t border-neutral-800 bg-neutral-950 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
             <Zap className="w-4 h-4" />
@@ -965,6 +985,18 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
             <p className="text-[10px] text-neutral-400">100% Gratuito & Ilimitado</p>
           </div>
         </div>
+
+        {onOpenAssistant && (
+          <button
+            type="button"
+            onClick={onOpenAssistant}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 hover:text-white text-[11px] font-semibold transition-all shadow-sm"
+            title="Falar com o Assistente: 943004073"
+          >
+            <Phone className="w-3 h-3 text-indigo-400" />
+            <span>943004073</span>
+          </button>
+        )}
       </div>
     </aside>
   );

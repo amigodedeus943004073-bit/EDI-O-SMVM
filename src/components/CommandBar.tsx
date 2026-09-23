@@ -19,6 +19,7 @@ interface CommandBarProps {
   history?: AICommand[];
   lastFeedback?: string | null;
   onClearFeedback?: () => void;
+  onOpenAssistant?: () => void;
 }
 
 export const CommandBar: React.FC<CommandBarProps> = ({
@@ -27,6 +28,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
   history = [],
   lastFeedback = null,
   onClearFeedback,
+  onOpenAssistant,
 }) => {
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
@@ -39,8 +41,10 @@ export const CommandBar: React.FC<CommandBarProps> = ({
   };
 
   const quickCommands = [
+    { label: '✨ Remover Manchas & Rugas', cmd: 'remover manchas e rugas automaticamente com qualidade 4K' },
     { label: '⚡ Auto Retoque Facial', cmd: 'suavizar pele, remover imperfeições e clarear olhos' },
     { label: '📸 Calibração Canon L', cmd: 'calibração canon com cores quentes e nitidez 85mm' },
+    { label: '🌟 4K Ultra-HD Máster', cmd: 'ativar qualidade 4k ultra-hd' },
     { label: '☀️ Golden Hour', cmd: 'golden hour com iluminação dourada e calor acolhedor' },
     { label: '🎬 Cinema 35mm Grão', cmd: 'grão analógico de filme 35mm e contraste suave' },
     { label: '🖤 Leica Monochrom', cmd: 'preto e branco leica de alto contraste e grão' },
@@ -135,6 +139,15 @@ export const CommandBar: React.FC<CommandBarProps> = ({
 
         {/* Quick Command Suggestions Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
+          {onOpenAssistant && (
+            <button
+              type="button"
+              onClick={onOpenAssistant}
+              className="px-2.5 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/50 hover:bg-indigo-900 text-indigo-200 hover:text-white whitespace-nowrap transition-all shrink-0 flex items-center gap-1 font-semibold"
+            >
+              <span>📞 Assistente: 943004073</span>
+            </button>
+          )}
           <span className="text-neutral-500 text-[10px] uppercase font-bold shrink-0 flex items-center gap-1 mr-1">
             <Sparkles className="w-3 h-3 text-amber-400" /> Sugestões:
           </span>

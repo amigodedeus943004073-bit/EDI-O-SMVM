@@ -33,6 +33,25 @@ export interface PhotoAdjustments {
   ultra4kEnabled?: boolean;
   ultra4kSharpness?: number; // 0 to 100
   ultra4kDenoise?: number; // 0 to 100
+  // Remoção Automática de Manchas, Rugas e Imperfeições
+  autoBlemishRemoval?: boolean; // Ativação da filtragem neural bilateral
+  blemishIntensity?: number;    // 0 a 100: remoção de manchas e marcas da pele
+  wrinkleIntensity?: number;    // 0 a 100: atenuação de linhas de expressão e rugas
+}
+
+export interface BatchPhotoItem {
+  id: string;
+  name: string;
+  originalUrl: string;
+  processedUrl?: string;
+  sizeBytes: number;
+  status: 'pending' | 'processing' | 'done' | 'error';
+  progress: number;
+  stats?: {
+    spotsRemoved: number;
+    wrinklesSoftened: number;
+    resolution: string;
+  };
 }
 
 export interface CustomReference {
@@ -98,6 +117,8 @@ export interface HistoryStep {
 
 export interface FacialRetouchSettings {
   smoothSkin: number;        // 0 to 100: Suavização de pele & redução de poros
+  blemishRemoval: number;    // 0 to 100: Remoção automática de manchas, acnes e marcas da pele
+  wrinkleRemoval: number;    // 0 to 100: Atenuação automática de rugas e linhas de expressão
   skinGlow: number;          // 0 to 100: Luminosidade & viço natural
   eyeEnhance: number;        // 0 to 100: Realce de íris e olhar radiante
   teethWhitening: number;    // 0 to 100: Clareamento de dentes e sorriso
