@@ -34,6 +34,7 @@ import {
   calculateHistogram,
   generateCutoutCanvas,
   applyInpainting,
+  applyBlemishWrinklePass,
 } from './utils/imageProcessing';
 import { parseCameraOrRawFile } from './utils/rawParser';
 import { executePhotoCommand } from './utils/commandEngine';
@@ -415,6 +416,39 @@ export default function App() {
       console.error('Erro na auditoria Gemini:', err);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Aplicar remoção real de manchas/imperfeições na imagem
+  const handleApplyBlemishRemoval = () => {
+    if (!imageElementRef.current) return;
+    setIsProcessing(true);
+    setProcessingMessage('Removendo manchas e imperfeições da pele...');
+
+    try {
+      const source = document.createElement('canvas');
+      source.width = imageElementRef.current.naturalWidth || 1200;
+      source.height = imageElementRef.current.naturalHeight || 800;
+      const ctx = source.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(imageElementRef.current, 0, 0, source.width, source.height);
+
+      const blemish = Math.max(facialRetouch.blemishRemoval, adjustments.blemishIntensity || 0) / 100;
+      const wrinkle = Math.max(facialRetouch.wrinkleRemoval, adjustments.wrinkleIntensity || 0) / 100;
+      applyBlemishWrinklePass(ctx, source.width, source.height, blemish || 0.85, wrinkle || 0.35);
+
+      const newUrl = source.toDataURL('image/png');
+      setImageSrc(newUrl);
+      setOriginalImageSrc(newUrl);
+      setFacialRetouch((prev) => ({ ...prev, blemishRemoval: 0, wrinkleRemoval: 0 }));
+      setAdjustments((prev) => ({ ...prev, autoBlemishRemoval: false, blemishIntensity: 0, wrinkleIntensity: 0 }));
+      pushHistory('Manchas e imperfeições removidas', adjustments);
+      setLastCommandFeedback('Manchas e imperfeições removidas e aplicadas à foto.');
+    } catch (err) {
+      console.error('Erro ao aplicar remoção de manchas:', err);
+      setLastCommandFeedback('Não foi possível aplicar a remoção de manchas.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -958,6 +992,7 @@ export default function App() {
                 onRunSmartEnhance={handleRunSmartEnhance}
                 onRunFaceRetouch={handleRunFaceRetouch}
                 onRunBgRemoval={handleRunBgRemoval}
+          onApplyBlemishRemoval={handleApplyBlemishRemoval}
                 onRunGenerativePrompt={handleRunGenerativePrompt}
                 isProcessing={isProcessing}
                 onExecuteCommand={handleExecuteCommand}
