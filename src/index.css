@@ -1,1 +1,165 @@
 @import "tailwindcss";
+
+/* SMVM IA — layout responsivo para telemóveis */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+  .smvm-header {
+    height: 56px;
+    padding-left: 8px;
+    padding-right: 8px;
+    gap: 6px;
+  }
+
+  .smvm-header > div {
+    min-width: 0;
+  }
+
+  .smvm-header input {
+    width: 92px !important;
+    max-width: 92px;
+  }
+
+  .smvm-commandbar {
+    padding: 6px 8px;
+  }
+
+  .smvm-commandbar form {
+    gap: 6px;
+  }
+
+  .smvm-commandbar input {
+    min-width: 0;
+    padding-left: 42px !important;
+    padding-right: 32px;
+    font-size: 12px;
+  }
+
+  .smvm-commandbar form > button[type="submit"] {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .smvm-commandbar form > button[type="submit"] span {
+    font-size: 0;
+  }
+
+  .smvm-commandbar form > button[type="submit"] span::after {
+    content: "IA";
+    font-size: 11px;
+  }
+
+  .smvm-commandbar .max-w-6xl {
+    max-width: none;
+  }
+
+  .smvm-workspace {
+    min-height: 0;
+  }
+
+  .smvm-workspace > div:not(.fixed) {
+    min-width: 0;
+  }
+
+  .smvm-samplebar {
+    height: 58px;
+    min-height: 58px;
+    padding: 4px 8px;
+    justify-content: flex-start;
+  }
+
+  .smvm-samplebar > div:nth-child(2) {
+    margin-left: 4px;
+    margin-right: 0;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .smvm-header {
+    height: 52px;
+  }
+
+  .smvm-header > div:nth-child(2) {
+    flex-shrink: 0;
+  }
+
+  .smvm-header > div:nth-child(2) button {
+    padding: 6px !important;
+  }
+
+  .smvm-header > div:nth-child(2) button span {
+    display: none !important;
+  }
+
+  .smvm-header > div:nth-child(3) {
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .smvm-header > div:nth-child(3) > button {
+    padding: 6px 7px !important;
+  }
+
+  .smvm-commandbar {
+    padding: 5px 6px;
+  }
+
+  .smvm-commandbar form > button[type="submit"] {
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .smvm-commandbar form > button[type="submit"] span::after {
+    content: "➤";
+    font-size: 14px;
+  }
+
+  .smvm-commandbar .overflow-x-auto {
+    max-width: 100vw;
+  }
+
+  .smvm-samplebar {
+    height: 54px;
+    min-height: 54px;
+  }
+
+  .smvm-samplebar > div:first-child {
+    display: none;
+  }
+
+  .smvm-samplebar > div:nth-child(2) {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Drawer de ferramentas ocupa quase toda a largura, sem esconder o canvas */
+  .smvm-workspace .w-80,
+  .smvm-workspace .w-96 {
+    width: min(88vw, 360px);
+  }
+
+  /* Evita que o canvas seja comprimido por dimensões mínimas */
+  .smvm-workspace canvas,
+  .smvm-workspace img {
+    max-width: 100%;
+  }
+}
+
+/* Área central do editor: permite rolagem interna quando necessário */
+.smvm-workspace {
+  min-width: 0;
+  min-height: 0;
+}
