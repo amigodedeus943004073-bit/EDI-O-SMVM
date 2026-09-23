@@ -79,7 +79,7 @@ export function executePhotoCommand(
   }
 
   // 2. Canon camera / L-series emulation
-  if (text.includes('canon') || text.includes('c2') || text.includes('cr2') || text.includes('85mm') || text.includes('l series') || text.includes('l-series')) {
+  if (text.includes('canon') || /\\bc2\\b/.test(text) || /\\bcr2\\b/.test(text) || text.includes('85mm') || text.includes('l series') || text.includes('l-series')) {
     newAdj.warmth = (currentAdj.warmth || 0) + 14;
     newAdj.contrast = Math.max(currentAdj.contrast, 16);
     newAdj.sharpness = Math.max(currentAdj.sharpness, 42);
@@ -93,7 +93,7 @@ export function executePhotoCommand(
 
   // 2.5. 4K Ultra-HD & Conversão Automática
   if (
-    text.includes('4k') ||
+    /\\b4k\\b/.test(text) ||
     text.includes('ultra hd') ||
     text.includes('ultrahd') ||
     text.includes('super resolucao') ||
@@ -213,7 +213,7 @@ export function executePhotoCommand(
   }
 
   // 10. Estúdio Softbox / Luz de estúdio profissional
-  if (text.includes('softbox') || text.includes('estudio') || text.includes('estúdio') || text.includes('profissional') || text.includes('pro')) {
+  if (text.includes('softbox') || text.includes('estudio') || text.includes('estúdio') || text.includes('profissional') || /\\bpro\\b/.test(text)) {
     newAdj.studioLightMode = 'softbox';
     newAdj.studioLightIntensity = 60;
     newAdj.clarity = 25;
@@ -223,7 +223,7 @@ export function executePhotoCommand(
   }
 
   // 11. Preto e Branco / Monocromático / Noir
-  if (text.includes('preto e branco') || text.includes('p&b') || text.includes('pb') || text.includes('monocrom') || text.includes('noir') || text.includes('leica')) {
+  if (text.includes('preto e branco') || text.includes('p&b') || /\\bpb\\b/.test(text) || text.includes('monocrom') || text.includes('noir') || text.includes('leica')) {
     newAdj.saturation = -100;
     newAdj.contrast = 38;
     newAdj.clarity = 30;
