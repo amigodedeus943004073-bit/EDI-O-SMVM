@@ -439,7 +439,6 @@ export default function App() {
 
       const newUrl = source.toDataURL('image/png');
       setImageSrc(newUrl);
-      setOriginalImageSrc(newUrl);
       setFacialRetouch((prev) => ({ ...prev, blemishRemoval: 0, wrinkleRemoval: 0 }));
       setAdjustments((prev) => ({ ...prev, autoBlemishRemoval: false, blemishIntensity: 0, wrinkleIntensity: 0 }));
       pushHistory('Manchas e imperfeições removidas', adjustments);
