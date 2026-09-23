@@ -420,8 +420,10 @@ export default function App() {
   };
 
   // Aplicar remoção real de manchas/imperfeições na imagem
-  const handleApplyBlemishRemoval = () => {
+  const handleApplyBlemishRemoval = (overrideRetouch?: Partial<FacialRetouchSettings>, overrideAdjustments?: Partial<PhotoAdjustments>) => {
     if (!imageElementRef.current) return;
+    const effectiveRetouch = { ...facialRetouch, ...(overrideRetouch || {}) };
+    const effectiveAdjustments = { ...adjustments, ...(overrideAdjustments || {}) };
     setIsProcessing(true);
     setProcessingMessage('Removendo manchas e imperfeições da pele...');
 
@@ -433,8 +435,8 @@ export default function App() {
       if (!ctx) return;
       ctx.drawImage(imageElementRef.current, 0, 0, source.width, source.height);
 
-      const blemish = Math.max(facialRetouch.blemishRemoval, adjustments.blemishIntensity || 0) / 100;
-      const wrinkle = Math.max(facialRetouch.wrinkleRemoval, adjustments.wrinkleIntensity || 0) / 100;
+      const blemish = Math.max(effectiveRetouch.blemishRemoval || 0, effectiveAdjustments.blemishIntensity || 0) / 100;
+      const wrinkle = Math.max(effectiveRetouch.wrinkleRemoval || 0, effectiveAdjustments.wrinkleIntensity || 0) / 100;
       applyBlemishWrinklePass(ctx, source.width, source.height, blemish || 0.85, wrinkle || 0.35);
 
       const newUrl = source.toDataURL('image/png');
@@ -564,6 +566,11 @@ export default function App() {
       const result = executePhotoCommand(commandText, adjustments, facialRetouch);
 
       if (result.success && result.appliedChanges.length > 0) {
+        const commandNeedsBlemishRemoval =
+          /manchas?|rugas?|espinhas?|acne|imperfei[cç][oõ]es?|olheiras?/i.test(commandText);
+        const commandNeedsBackgroundRemoval =
+          /remover (?:o )?fundo|tirar (?:o )?fundo|fundo transparente/i.test(commandText);
+
         if (result.newAdjustments) {
           setAdjustments((prev) => ({ ...prev, ...result.newAdjustments }));
         }
@@ -580,7 +587,18 @@ export default function App() {
         setCommandHistory((prev) => [newCmd, ...prev.slice(0, 19)]);
         setLastCommandFeedback(result.message);
         pushHistory(`Comando IA: ${commandText}`, { ...adjustments, ...(result.newAdjustments || {}) });
-        setIsProcessing(false);
+
+        // Comandos de remoção devem executar a operação na imagem, não apenas alterar sliders.
+        if (commandNeedsBlemishRemoval) {
+          handleApplyBlemishRemoval(
+            result.newRetouch || {},
+            result.newAdjustments || {}
+          );
+        } else if (commandNeedsBackgroundRemoval) {
+          await handleRunBgRemoval();
+        } else {
+          setIsProcessing(false);
+        }
         return true;
       }
 
