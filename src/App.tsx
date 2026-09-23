@@ -567,9 +567,18 @@ export default function App() {
 
       if (result.success && result.appliedChanges.length > 0) {
         const commandNeedsBlemishRemoval =
-          /manchas?|rugas?|espinhas?|acne|imperfei[cç][oõ]es?|olheiras?/i.test(commandText);
+          /(?:remover|tirar|limpar|eliminar).*(?:manchas?|rugas?|espinhas?|acne|imperfei[cç][oõ]es?|olheiras?)/i.test(commandText) ||
+          /(?:manchas?|rugas?|espinhas?|acne|imperfei[cç][oõ]es?|olheiras?)/i.test(commandText);
         const commandNeedsBackgroundRemoval =
-          /remover (?:o )?fundo|tirar (?:o )?fundo|fundo transparente/i.test(commandText);
+          /(?:remover|tirar|eliminar).*(?:fundo|background)|fundo transparente/i.test(commandText);
+        const commandNeedsReset = /^(?:reset|resetar|restaurar|restaurar tudo|original|voltar ao original)/i.test(cleanLower);
+        const commandNeedsSmartEnhance = /(?:auto|autom[aá]tico|melhorar|aprimorar|enhance).*(?:foto|imagem|qualidade)|(?:melhorar|aprimorar) a foto/i.test(cleanLower);
+        const commandNeedsFaceRetouch =
+          /(?:retoque|retocar|suavizar pele|pele aveludada|rosto|retrato|dentes|sorriso|olhos radiantes)/i.test(cleanLower);
+        const commandNeeds4K = /(?:4k|ultra.?hd|super.?resolu[cç][aã]o|upscale)/i.test(cleanLower);
+        const commandNeedsEraser = /(?:borracha|apagar objeto|remover objeto|tirar objeto|apagar elemento|remover elemento)/i.test(cleanLower);
+        const commandNeedsCompare = /(?:comparar|antes e depois|antes\/depois|ver antes)/i.test(cleanLower);
+        const commandNeedsExport = /(?:exportar|guardar|salvar|baixar|download).*(?:foto|imagem|resultado)?/i.test(cleanLower);
 
         if (result.newAdjustments) {
           setAdjustments((prev) => ({ ...prev, ...result.newAdjustments }));
@@ -588,14 +597,33 @@ export default function App() {
         setLastCommandFeedback(result.message);
         pushHistory(`Comando IA: ${commandText}`, { ...adjustments, ...(result.newAdjustments || {}) });
 
-        // Comandos de remoção devem executar a operação na imagem, não apenas alterar sliders.
-        if (commandNeedsBlemishRemoval) {
-          handleApplyBlemishRemoval(
-            result.newRetouch || {},
-            result.newAdjustments || {}
-          );
+        // Cada família de comando chama a operação correspondente; alterar apenas sliders não é suficiente.
+        if (commandNeedsReset) {
+          handleResetAll();
+          setLastCommandFeedback('Imagem restaurada para o estado original.');
+          setIsProcessing(false);
+        } else if (commandNeedsBlemishRemoval) {
+          handleApplyBlemishRemoval(result.newRetouch || {}, result.newAdjustments || {});
         } else if (commandNeedsBackgroundRemoval) {
           await handleRunBgRemoval();
+        } else if (commandNeedsSmartEnhance) {
+          handleRunSmartEnhance();
+        } else if (commandNeedsFaceRetouch) {
+          handleRunFaceRetouch();
+        } else if (commandNeeds4K) {
+          handleConvertTo4k();
+        } else if (commandNeedsEraser) {
+          setActiveTab('eraser');
+          setLastCommandFeedback('Borracha Mágica ativada. Pinte sobre o objeto e aplique a remoção.');
+          setIsProcessing(false);
+        } else if (commandNeedsCompare) {
+          setIsCompareMode(true);
+          setLastCommandFeedback('Modo Antes & Depois ativado.');
+          setIsProcessing(false);
+        } else if (commandNeedsExport) {
+          setIsExportOpen(true);
+          setLastCommandFeedback('Janela de exportação aberta.');
+          setIsProcessing(false);
         } else {
           setIsProcessing(false);
         }
