@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAssistant,
 }) => {
   return (
-    <header className="h-14 border-b border-neutral-800 bg-neutral-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between z-30 select-none">
+    <header className="smvm-header h-14 border-b border-neutral-800 bg-neutral-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between z-30 select-none">
       {/* Brand & Project Name */}
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Mobile Sidebar Toggle Button */}
