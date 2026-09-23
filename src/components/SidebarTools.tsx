@@ -618,12 +618,12 @@ export const SidebarTools: React.FC<SidebarToolsProps> = ({
                 const val = facialRetouch[item.key];
                 return (
                   <div key={item.key} className="space-y-1 p-2.5 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
-                  {item.key === 'blemishRemoval' && val > 0 && (
+                  {item.key === 'blemishRemoval' && (
                     <button
                       type="button"
                       onClick={onApplyBlemishRemoval}
-                      disabled={isProcessing}
-                      className="w-full mb-2 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-neutral-800 text-white text-xs font-bold flex items-center justify-center gap-2"
+                      disabled={isProcessing || val === 0}
+                      className="w-full mb-2 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white text-xs font-bold flex items-center justify-center gap-2"
                     >
                       <Check className="w-3.5 h-3.5" />
                       Aplicar Remoção de Manchas
