@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Hide Lovable badge */
+#lovable-badge {
+  display: none !important;
+}
+
 /* SMVM IA — layout responsivo para telemóveis */
 html, body, #root {
   width: 100%;
